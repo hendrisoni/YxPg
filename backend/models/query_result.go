@@ -10,6 +10,7 @@ type QueryResult struct {
 	Error        string          `json:"error,omitempty"`
 	QueryType    string          `json:"query_type"` // select, insert, update, delete, ddl
 	RowsAffected int64           `json:"rows_affected,omitempty"`
+	RawSQL       string          `json:"raw_sql,omitempty"`
 }
 
 // ColumnMeta holds metadata about a result column
