@@ -114,6 +114,16 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     return null
   }
 
+  // Rename a node by ID
+  async function renameNode(id: string, newLabel: string) {
+    const node = findNodeById(workspaceTree.value, id)
+    if (node) {
+      node.label = newLabel
+      workspaceTree.value = [...workspaceTree.value]
+      await saveWorkspace()
+    }
+  }
+
   // Delete a node by ID
   async function deleteNode(id: string) {
     removeNodeById(workspaceTree.value, id)
@@ -165,6 +175,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     saveWorkspace,
     addCategory,
     addObject,
+    renameNode,
     deleteNode,
     moveNode,
     fetchCatalog,
