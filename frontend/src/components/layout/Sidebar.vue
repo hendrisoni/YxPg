@@ -1,0 +1,291 @@
+<template>
+  <aside
+    class="h-full bg-navy-secondary border-r border-navy-border flex flex-col"
+    :class="{ 'transition-[width] duration-150': !uiStore.isResizingSidebar }"
+    :style="{ width: sidebarWidth + 'px' }"
+  >
+    <!-- Header -->
+    <div class="flex items-center justify-between px-3 py-2 border-b border-navy-border">
+      <div class="flex items-center gap-2">
+        <svg class="w-5 h-5 text-teal-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <ellipse cx="12" cy="5" rx="9" ry="3" />
+          <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
+          <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
+        </svg>
+      </div>
+      <div class="flex items-center gap-1">
+        <button
+          @click="$emit('searchTable')"
+          class="p-1 rounded hover:bg-navy-hover text-text-secondary hover:text-teal-accent transition-colors"
+          title="Search Objects (Ctrl+K)"
+        >
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8" />
+            <path d="M21 21l-4.35-4.35" />
+          </svg>
+        </button>
+        <button
+          @click="handleAddCategory"
+          class="p-1 rounded hover:bg-navy-hover text-text-secondary hover:text-teal-accent transition-colors"
+          title="Add Category"
+        >
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+        </button>
+
+        <button
+          @click="$emit('openSettings')"
+          class="p-1 rounded hover:bg-navy-hover text-text-secondary hover:text-teal-accent transition-colors"
+          title="Settings"
+        >
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3" />
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+          </svg>
+        </button>
+        <button
+          @click="tabsStore.activeTabId = null"
+          class="p-1 rounded hover:bg-navy-hover text-text-secondary hover:text-teal-accent transition-colors"
+          title="Go to Home"
+        >
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+            <polyline points="9 22 9 12 15 12 15 22" />
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Search -->
+    <div class="px-3 py-2 border-b border-navy-border flex items-center gap-1.5">
+      <div class="relative flex-1">
+        <svg class="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8" />
+          <path d="M21 21l-4.35-4.35" />
+        </svg>
+        <input
+          v-model="searchQuery"
+          type="text"
+          placeholder="Search workspace..."
+          class="w-full pl-8 pr-3 py-1.5 text-xs bg-navy-tertiary border border-navy-border rounded-md text-text-primary placeholder-text-muted focus:border-teal-accent focus:outline-none"
+        />
+      </div>
+
+      <!-- Expand / Collapse All Button (Icon Only) -->
+      <button
+        @click="toggleAllNodes"
+        class="p-1.5 rounded text-text-muted hover:text-text-primary hover:bg-navy-hover transition-colors flex-shrink-0"
+        :title="isAllExpanded ? 'Collapse All' : 'Expand All'"
+      >
+        <svg v-if="isAllExpanded" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m17 18-5-5-5 5M17 11l-5-5-5 5" />
+        </svg>
+        <svg v-else class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m7 6 5 5 5-5M7 13l5 5 5-5" />
+        </svg>
+      </button>
+
+      <!-- Load / Save Workspace Button -->
+      <button
+        @click="$emit('openWorkspace')"
+        class="p-1.5 rounded text-text-muted hover:text-text-primary hover:bg-navy-hover transition-colors flex-shrink-0"
+        title="Load / Save Workspace"
+      >
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v13a2 2 0 0 1-2 2z" />
+          <polyline points="17 21 17 13 7 13 7 21" />
+          <polyline points="7 3 7 8 15 8" />
+        </svg>
+      </button>
+    </div>
+
+    <!-- Tree Container (Root Drop Zone) -->
+    <div 
+      class="flex-1 overflow-y-auto overflow-x-hidden py-1"
+      @dragover.prevent
+      @drop="handleRootDrop"
+    >
+      <!-- Loading indicator -->
+      <div v-if="workspaceStore.loading" class="px-3 py-4 text-center">
+        <div class="inline-block w-5 h-5 border-2 border-teal-accent border-t-transparent rounded-full animate-spin"></div>
+        <p class="text-xs text-text-muted mt-2">Loading workspace...</p>
+      </div>
+
+      <!-- Workspace Tree -->
+      <div v-else-if="filteredTree.length > 0">
+        <SchemaTreeNode
+          v-for="node in filteredTree"
+          :key="node.id"
+          :node="node"
+          :level="0"
+          :selected-node-id="selectedNodeId"
+          @select-node="selectedNodeId = $event"
+          @open-table="handleOpenTable"
+          @open-query="handleOpenQuery"
+          @copy-name="handleCopyName"
+          @copy-select="handleCopySelect"
+          @view-ddl="handleViewDDL"
+          @drop-table="handleDropTable"
+          @delete-node="handleDeleteNode"
+        />
+      </div>
+
+      <!-- Empty state -->
+      <div v-else class="px-3 py-8 text-center">
+        <svg class="w-8 h-8 mx-auto text-text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M20 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2Z" />
+          <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+        </svg>
+        <p class="text-xs text-text-muted mt-2">Workspace is empty</p>
+        <p class="text-[10px] text-text-muted mt-1">Press Ctrl+K to search and add tables</p>
+        <button
+          @click="handleAddCategory"
+          class="mt-3 px-3 py-1.5 text-xs bg-teal-accent text-navy-primary rounded-md font-medium hover:bg-teal-hover transition-colors"
+        >
+          Add Category
+        </button>
+      </div>
+    </div>
+
+  </aside>
+</template>
+
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue'
+import { useConnectionsStore } from '../../stores/connections'
+import { useWorkspaceStore } from '../../stores/workspace'
+import { useTabsStore } from '../../stores/tabs'
+import { useUiStore } from '../../stores/ui'
+import type { TreeNode } from '../../types'
+import SchemaTreeNode from '../schema/SchemaTreeNode.vue'
+
+const emit = defineEmits(['toggle', 'newConnection', 'searchTable', 'openSettings', 'openWorkspace'])
+
+const connectionsStore = useConnectionsStore()
+const workspaceStore = useWorkspaceStore()
+const tabsStore = useTabsStore()
+const uiStore = useUiStore()
+
+const searchQuery = ref('')
+const isAllExpanded = ref(false)
+const selectedNodeId = ref<string | null>(null)
+const sidebarWidth = computed(() => uiStore.sidebarWidth)
+
+onMounted(() => {
+  workspaceStore.loadWorkspace()
+})
+
+const filteredTree = computed(() => {
+  if (!searchQuery.value) return workspaceStore.workspaceTree
+  const query = searchQuery.value.toLowerCase()
+  return filterTreeNodes(workspaceStore.workspaceTree, query)
+})
+
+function filterTreeNodes(nodes: TreeNode[], query: string): TreeNode[] {
+  return nodes.reduce<TreeNode[]>((acc, node) => {
+    const matchesSelf = node.label.toLowerCase().includes(query)
+    const filteredChildren = node.children ? filterTreeNodes(node.children, query) : []
+    if (matchesSelf || filteredChildren.length > 0) {
+      acc.push({
+        ...node,
+        children: filteredChildren.length > 0 ? filteredChildren : node.children,
+        expanded: true,
+      })
+    }
+    return acc
+  }, [])
+}
+
+async function handleAddCategory() {
+  const name = prompt('Enter category name:')
+  if (name && name.trim()) {
+    await workspaceStore.addCategory(name.trim())
+  }
+}
+
+function handleRootDrop(event: DragEvent) {
+  const nodeId = event.dataTransfer?.getData('text/plain')
+  if (nodeId) {
+    workspaceStore.moveNode(nodeId, null)
+  }
+}
+
+function handleDeleteNode(id: string) {
+  if (confirm('Are you sure you want to remove this item from your workspace?')) {
+    workspaceStore.deleteNode(id)
+  }
+}
+
+function setAllNodesExpandedState(nodes: any[], state: boolean) {
+  for (const node of nodes) {
+    node.expanded = state
+    if (node.children && node.children.length > 0) {
+      setAllNodesExpandedState(node.children, state)
+    }
+  }
+}
+
+function toggleAllNodes() {
+  isAllExpanded.value = !isAllExpanded.value
+  setAllNodesExpandedState(workspaceStore.workspaceTree, isAllExpanded.value)
+  workspaceStore.workspaceTree = [...workspaceStore.workspaceTree]
+  workspaceStore.saveWorkspace()
+}
+
+
+function handleOpenTable(schema: string, table: string, connectionId?: string) {
+  const connId = connectionId || connectionsStore.currentConnectionId
+  if (!connId) return
+  tabsStore.createTab('table', {
+    title: table,
+    connectionId: connId,
+    schema,
+    table,
+  })
+}
+
+function handleOpenQuery(schema: string, table: string, connectionId?: string) {
+  const connId = connectionId || connectionsStore.currentConnectionId
+  if (!connId) return
+  tabsStore.createTab('query', {
+    title: table,
+    connectionId: connId,
+    schema,
+    table,
+    sql: `SELECT * FROM ${schema}.${table}`,
+  })
+}
+
+function handleCopyName(name: string) {
+  navigator.clipboard.writeText(name)
+  uiStore.addNotification({ type: 'info', title: 'Copied', message: `Copied "${name}" to clipboard` })
+}
+
+function handleCopySelect(schema: string, table: string) {
+  const sql = `SELECT * FROM ${schema}.${table}`
+  navigator.clipboard.writeText(sql)
+  uiStore.addNotification({ type: 'info', title: 'Copied', message: 'SELECT query copied to clipboard' })
+}
+
+function handleViewDDL(schema: string, table: string, connectionId?: string) {
+  const connId = connectionId || connectionsStore.currentConnectionId
+  if (!connId) return
+  tabsStore.createTab('ddl', {
+    title: table,
+    connectionId: connId,
+    schema,
+    table,
+  })
+}
+
+function handleDropTable(schema: string, table: string) {
+  uiStore.addNotification({ type: 'warning', title: 'Drop Table', message: `Drop ${schema}.${table}? (not implemented yet)` })
+}
+
+async function handleDisconnect() {
+  if (connectionsStore.currentConnectionId) {
+    await connectionsStore.disconnect(connectionsStore.currentConnectionId)
+  }
+}
+</script>

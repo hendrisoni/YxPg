@@ -1,0 +1,302 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg-primary: #050505;
+    --bg-secondary: #0C0C0C;
+    --bg-tertiary: #121212;
+    --bg-hover: #1C1C1C;
+    --border: #202020;
+    --accent-teal: #00C9A7;
+    --accent-blue: #3B82F6;
+    --accent-amber: #F59E0B;
+    --accent-red: #EF4444;
+    --accent-green: #10B981;
+    --text-primary: #E2E8F0;
+    --text-secondary: #94A3B8;
+    --text-muted: #4B5563;
+    --null-color: #4B5563;
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) var(--bg-secondary);
+  }
+
+  ::selection {
+    background-color: #1e3a8a !important;
+    color: #ffffff !important;
+  }
+
+  ::-moz-selection {
+    background-color: #1e3a8a !important;
+    color: #ffffff !important;
+  }
+
+  *::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 4px;
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background: var(--text-muted);
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow: hidden;
+  }
+
+  input, select, textarea {
+    background-color: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    border-radius: 0.375rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    outline: none;
+    transition: border-color 0.15s ease;
+  }
+
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--accent-teal);
+    box-shadow: 0 0 0 1px var(--accent-teal);
+  }
+
+  input::placeholder, textarea::placeholder {
+    color: var(--text-muted);
+  }
+
+  button {
+    cursor: pointer;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  /* Tabulator dark theme overrides */
+  .tabulator {
+    background-color: transparent !important;
+    color: var(--text-primary) !important;
+    font-family: 'Inter', system-ui, sans-serif !important;
+    font-size: 0.8125rem !important;
+    border: none !important;
+  }
+
+  .tabulator .tabulator-header {
+    background-color: var(--bg-secondary) !important;
+    border-bottom: 2px solid var(--border) !important;
+    color: var(--text-secondary) !important;
+  }
+
+  .tabulator .tabulator-header .tabulator-col {
+    background-color: transparent !important;
+    border-right: 1px solid var(--border) !important;
+    color: inherit !important;
+  }
+
+  .tabulator .tabulator-header .tabulator-col:hover {
+    background-color: var(--bg-hover) !important;
+  }
+
+  .tabulator .tabulator-header .tabulator-col.tabulator-sortable .tabulator-col-content {
+    padding: 0.5rem !important;
+  }
+
+  .tabulator .tabulator-header .tabulator-col .tabulator-col-content {
+    padding: 0.5rem 0.75rem !important;
+  }
+
+  .tabulator .tabulator-tableholder {
+    background-color: transparent !important;
+  }
+
+  .tabulator .tabulator-row {
+    background-color: var(--bg-primary) !important;
+    border-bottom: 1px solid var(--border) !important;
+    color: var(--text-primary) !important;
+    min-height: 32px !important;
+  }
+
+  .tabulator .tabulator-row.tabulator-row-even {
+    background-color: var(--bg-secondary) !important;
+  }
+
+  .tabulator .tabulator-row:hover {
+    background-color: var(--bg-hover) !important;
+    color: var(--text-primary) !important;
+  }
+
+  .tabulator .tabulator-row.tabulator-selected,
+  .tabulator .tabulator-row.tabulator-selected:hover {
+    background-color: #1e3a8a !important;
+    color: var(--text-primary) !important;
+  }
+
+  .tabulator .tabulator-row .tabulator-cell {
+    border-right: 1px solid var(--border) !important;
+    padding: 0.25rem 0.75rem !important;
+  }
+
+  .tabulator .tabulator-row .tabulator-cell.editing {
+    background-color: rgba(245, 158, 11, 0.1) !important;
+  }
+
+  .tabulator .tabulator-footer {
+    background-color: var(--bg-secondary) !important;
+    border-top: 1px solid var(--border) !important;
+    color: var(--text-secondary) !important;
+    padding: 0.25rem 0.75rem !important;
+  }
+
+  .tabulator .tabulator-footer .tabulator-page {
+    background-color: var(--bg-tertiary) !important;
+    color: var(--text-secondary) !important;
+    border-color: var(--border) !important;
+  }
+
+  .tabulator .tabulator-footer .tabulator-page.active {
+    background-color: var(--accent-teal) !important;
+    color: var(--bg-primary) !important;
+  }
+
+  .tabulator .tabulator-col-resize-handle {
+    background-color: transparent !important;
+  }
+
+  .tabulator-row .cell-null {
+    color: var(--null-color) !important;
+    font-style: italic !important;
+  }
+
+  .tabulator-row .cell-boolean {
+    display: inline-block;
+    padding: 0.125rem 0.5rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
+
+  .tabulator-row .cell-true {
+    background-color: rgba(16, 185, 129, 0.2);
+    color: #10B981;
+  }
+
+  .tabulator-row .cell-false {
+    background-color: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+  }
+
+  /* Tabulator Header Filter Container */
+  .tabulator .tabulator-header .tabulator-header-filter {
+    margin: 0 !important;
+    padding: 4px 6px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    border-top: 1px solid var(--border) !important;
+    background-color: var(--bg-secondary) !important;
+  }
+
+  /* Input Box inside the filter row */
+  .tabulator .tabulator-header .tabulator-header-filter input {
+    font-family: 'Inter', sans-serif;
+    font-size: 11px !important;
+    padding: 4px 6px !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 4px !important;
+    background-color: var(--bg-tertiary) !important;
+    color: var(--text-primary) !important;
+    outline: none !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    margin: 0 !important;
+    transition: all 0.2s ease;
+  }
+
+  .tabulator .tabulator-header .tabulator-header-filter input:focus {
+    border-color: var(--accent-teal) !important;
+    box-shadow: 0 0 0 2px rgba(0, 201, 167, 0.2) !important;
+  }
+
+  /* Hide state for Tabulator Header Filters */
+  .hide-grid-filters .tabulator-header-filter {
+    display: none !important;
+  }
+
+  .hide-grid-filters .tabulator-header .tabulator-col-title-holder {
+    padding-bottom: 6px !important;
+  }
+
+  /* Highlight active filter button in '#' column header */
+  .show-grid-filters .filter-trigger-btn {
+    color: var(--accent-teal) !important;
+  }
+
+  /* Ensure column resize handles are visible and styled */
+  .tabulator .tabulator-col-resize-handle {
+    position: relative !important;
+    display: inline-block !important;
+    width: 10px !important;
+    margin-left: -5px !important;
+    margin-right: -5px !important;
+    z-index: 50 !important;
+    cursor: col-resize !important;
+    opacity: 1 !important;
+    vertical-align: middle !important;
+  }
+
+  .tabulator .tabulator-col-resize-handle::after {
+    content: "" !important;
+    position: absolute !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    width: 2px !important;
+    background-color: transparent !important;
+    transition: background-color 0.15s ease !important;
+    pointer-events: none !important;
+  }
+
+  .tabulator .tabulator-col-resize-handle:hover::after {
+    background-color: var(--accent-teal) !important;
+  }
+
+  /* Grid layout overrides */
+  .grid-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+    border-radius: 12px;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.2);
+    background-color: var(--bg-primary) !important;
+    border: 1px solid var(--border) !important;
+  }
+
+  .grid-footer {
+    padding: 6px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 12px;
+    border-top: 1px solid var(--border) !important;
+    background-color: var(--bg-secondary) !important;
+    color: var(--text-secondary) !important;
+  }
+}

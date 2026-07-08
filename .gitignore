@@ -1,0 +1,40 @@
+# Wails build binaries and directory
+build/*
+!build/appicon.png
+!build/windows/
+build/windows/*
+!build/windows/icon.ico
+
+# Frontend build outputs and dependencies
+frontend/dist/
+frontend/node_modules/
+
+# Local env files
+.env*.local
+
+# Go workspace file and compiled files
+go.work
+go.work.sum
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# IDE and editors
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS specific files
+.DS_Store
+Thumbs.db
+
+# Application Configuration
+yxpg.conf

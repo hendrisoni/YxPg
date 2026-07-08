@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>YxPg Feature Demo & Product Guide</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #050505;
+      --bg-secondary: #0c0c0c;
+      --bg-tertiary: #121212;
+      --border: #202020;
+      --accent-teal: #00C9A7;
+      --accent-blue: #3B82F6;
+      --text-primary: #E2E8F0;
+      --text-secondary: #94A3B8;
+      --text-muted: #4B5563;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: 'Inter', sans-serif;
+      line-height: 1.6;
+      padding: 40px;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    .page {
+      max-width: 900px;
+      margin: 0 auto;
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 48px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .page::before {
+      content: '';
+      position: absolute;
+      top: -150px;
+      right: -150px;
+      width: 300px;
+      height: 300px;
+      background: radial-gradient(circle, rgba(0, 201, 167, 0.15) 0%, transparent 70%);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    .page::after {
+      content: '';
+      position: absolute;
+      bottom: -150px;
+      left: -150px;
+      width: 300px;
+      height: 300px;
+      background: radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, transparent 70%);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    header {
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 32px;
+      margin-bottom: 40px;
+    }
+
+    .logo-container {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 12px;
+    }
+
+    .logo-badge {
+      background: linear-gradient(135deg, var(--accent-teal), var(--accent-blue));
+      color: var(--bg-primary);
+      font-weight: 800;
+      font-size: 20px;
+      padding: 8px 16px;
+      border-radius: 8px;
+      letter-spacing: 1px;
+    }
+
+    h1 {
+      font-size: 28px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #ffffff 50%, var(--text-secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-top: 8px;
+    }
+
+    .subtitle {
+      color: var(--accent-teal);
+      font-size: 14px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    .section-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-left: 4px solid var(--accent-teal);
+      padding-left: 12px;
+    }
+
+    .grid-features {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-bottom: 40px;
+    }
+
+    .feature-card {
+      background-color: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      transition: all 0.3s ease;
+    }
+
+    .feature-card h3 {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--accent-teal);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .feature-card p {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    .highlight-pill {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 700;
+      background-color: rgba(0, 201, 167, 0.1);
+      color: var(--accent-teal);
+      padding: 2px 8px;
+      border-radius: 20px;
+      margin-left: 8px;
+      vertical-align: middle;
+      text-transform: uppercase;
+    }
+
+    .tech-stack {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 40px;
+    }
+
+    .tech-badge {
+      background-color: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text-secondary);
+    }
+
+    .tech-badge strong {
+      color: var(--accent-blue);
+    }
+
+    .image-container {
+      margin-top: 40px;
+      margin-bottom: 40px;
+      display: flex;
+      flex-direction: column;
+      gap: 32px;
+    }
+
+    .image-card {
+      background-color: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      padding: 16px;
+      border-radius: 12px;
+      text-align: center;
+    }
+
+    .image-card img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+      border: 1px solid #333333;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+      margin-bottom: 12px;
+    }
+
+    .image-caption {
+      font-size: 12px;
+      color: var(--text-secondary);
+      font-style: italic;
+    }
+
+    footer {
+      margin-top: 48px;
+      border-top: 1px solid var(--border);
+      padding-top: 24px;
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    @media print {
+      body {
+        padding: 0;
+        background-color: transparent;
+      }
+      .page {
+        border: none;
+        box-shadow: none;
+        padding: 20px;
+        background-color: var(--bg-secondary);
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="page">
+    <header>
+      <div class="logo-container">
+        <div class="logo-badge">YxPg</div>
+        <span class="subtitle">Next-Gen Postgres Client</span>
+      </div>
+      <h1>PostgreSQL GUI Client & Developer Tool</h1>
+    </header>
+
+    <main>
+      <div class="section-title">Key Core Features</div>
+      
+      <div class="grid-features">
+        <div class="feature-card">
+          <h3>
+            <span>Interactive Result Grid</span>
+            <span class="highlight-pill">Updated</span>
+          </h3>
+          <p>Powered by Tabulator for fast, customizable rendering of large query results. Features column reordering, resizing, and instant filtering.</p>
+        </div>
+
+        <div class="feature-card">
+          <h3>
+            <span>Advanced Column Filter</span>
+            <span class="highlight-pill">New UI</span>
+          </h3>
+          <p>A smart toggling header filter integrated directly into the left-most column header (#). Click the funnel icon in the index column header to instantly show/hide column-level filters.</p>
+        </div>
+
+        <div class="feature-card">
+          <h3>
+            <span>High-Speed XLSX Export</span>
+            <span class="highlight-pill">New</span>
+          </h3>
+          <p>Download query result sets directly into premium formatted Microsoft Excel (.xlsx) files. The row index is automatically excluded, and columns output clean text headers instead of HTML.</p>
+        </div>
+
+        <div class="feature-card">
+          <h3>
+            <span>SQL Editor with Darcula Theme</span>
+            <span class="highlight-pill">Updated</span>
+          </h3>
+          <p>An advanced CodeMirror 6 query editor featuring autocomplete, syntax highlighting, syntax matching, and a highly readable custom dark-blue text selection highlight.</p>
+        </div>
+      </div>
+
+      <div class="section-title">Built-In Technologies</div>
+      <div class="tech-stack">
+        <span class="tech-badge">Backend: <strong>Go / Wails v2</strong></span>
+        <span class="tech-badge">Frontend: <strong>Vue 3 / TypeScript</strong></span>
+        <span class="tech-badge">Bundler: <strong>Vite</strong></span>
+        <span class="tech-badge">Grid Renderer: <strong>Tabulator v6</strong></span>
+        <span class="tech-badge">Excel Parser: <strong>SheetJS (XLSX)</strong></span>
+        <span class="tech-badge">SQL Editor: <strong>CodeMirror 6</strong></span>
+      </div>
+
+      <div class="section-title">Visual Designs & Graphics</div>
+      
+      <div class="image-container">
+        <div class="image-card">
+          <img src="database_app_mockup.png" alt="Application Interface Mockup">
+          <div class="image-caption">Figure 1: High-fidelity dark mode desktop workspace mockup with sleek database tables.</div>
+        </div>
+
+        <div class="image-card">
+          <img src="database_schema_viz.png" alt="Database Schema Architecture Diagram">
+          <div class="image-caption">Figure 2: 3D abstract database schema visualization showing relations and telemetry details.</div>
+        </div>
+      </div>
+    </main>
+
+    <footer>
+      YxPg Database Client &copy; 2026. All rights reserved. Created in pair-programming with Antigravity AI.
+    </footer>
+  </div>
+
+</body>
+</html>

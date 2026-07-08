@@ -1,0 +1,33 @@
+{
+  "$schema": "https://wails.io/schemas/config.v2.json",
+  "name": "YxPg",
+  "outputfilename": "YxPg",
+  "frontend:install": "npm install",
+  "frontend:build": "npm run build",
+  "frontend:dev:watcher": "npm run dev",
+  "frontend:dev:serverUrl": "auto",
+  "author": {
+    "name": "YxPg"
+  },
+  "info": {
+    "companyName": "YxPg",
+    "productName": "YxPg",
+    "productVersion": "1.0.0",
+    "copyright": "2024 YxPg",
+    "comments": "PostgreSQL Desktop GUI"
+  },
+  "bundle": {
+    "name": "YxPg",
+    "filename": "YxPg",
+    "icon": "frontend/public/icon.png",
+    "windows": {
+      "icon": "frontend/public/icon.ico"
+    },
+    "mac": {
+      "icon": "frontend/public/icon.icns"
+    },
+    "linux": {
+      "icon": "frontend/public/icon.png"
+    }
+  }
+}
