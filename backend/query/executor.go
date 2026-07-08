@@ -27,6 +27,15 @@ func NewExecutor(manager *connection.Manager, history *History) *Executor {
 
 // Execute runs a SQL query and returns the result
 func (e *Executor) Execute(ctx context.Context, connID, sql string, timeout int) models.QueryResult {
+	if timeout <= 0 {
+		timeout = 30
+	}
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	e.manager.StartQuery(connID, cancel)
+	defer e.manager.FinishQuery(connID)
+
 	return e.ExecuteWithConnection(ctx, connID, sql, timeout)
 }
 
@@ -36,8 +45,11 @@ func (e *Executor) ExecuteMultiple(ctx context.Context, connID, sql string, time
 		timeout = 30
 	}
 
-	ctx, cancel := context.WithTimeout(ctx, time.Duration(timeout)*time.Second)
+	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
+
+	e.manager.StartQuery(connID, cancel)
+	defer e.manager.FinishQuery(connID)
 
 	// Very basic split by semicolon, ignoring those inside quotes (simplified)
 	// A proper parser is better, but this handles 90% of basic scripts
@@ -48,12 +60,21 @@ func (e *Executor) ExecuteMultiple(ctx context.Context, connID, sql string, time
 		if stmt == "" {
 			continue
 		}
+		if ctx.Err() != nil {
+			break
+		}
 		res := e.ExecuteWithConnection(ctx, connID, stmt, timeout)
 		res.RawSQL = stmt // pony: add RawSQL to result for UI tab labels
 		results = append(results, res)
 	}
 
 	if len(results) == 0 {
+		if ctx.Err() != nil {
+			return []models.QueryResult{{
+				Error:    ctx.Err().Error(),
+				Duration: 0,
+			}}
+		}
 		// Fallback if split fails or empty
 		return []models.QueryResult{e.ExecuteWithConnection(ctx, connID, sql, timeout)}
 	}
@@ -235,10 +256,9 @@ func (e *Executor) GetSavedQueries() ([]models.SavedQuery, error) {
 	return e.history.ListSavedQueries()
 }
 
-// CancelQuery cancels an active query (placeholder - actual implementation needs connection-specific cancel)
+// CancelQuery cancels an active query
 func (e *Executor) CancelQuery(connID string) error {
-	// TODO: Implement query cancellation using pg_cancel_backend
-	return nil
+	return e.manager.CancelQuery(connID)
 }
 
 // ExplainQuery runs EXPLAIN ANALYZE and returns structured result

@@ -286,3 +286,32 @@ func (m *Manager) Cleanup() {
 		delete(m.pools, id)
 	}
 }
+
+// StartQuery registers a cancel function for an active query on a connection
+func (m *Manager) StartQuery(connID string, cancel context.CancelFunc) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if oldCancel, exists := m.cancelFuncs[connID]; exists {
+		oldCancel()
+	}
+	m.cancelFuncs[connID] = cancel
+}
+
+// FinishQuery unregisters the cancel function for a connection's query
+func (m *Manager) FinishQuery(connID string) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	delete(m.cancelFuncs, connID)
+}
+
+// CancelQuery cancels an active query for the connection ID
+func (m *Manager) CancelQuery(connID string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if cancel, exists := m.cancelFuncs[connID]; exists {
+		cancel()
+		delete(m.cancelFuncs, connID)
+	}
+	return nil
+}
+

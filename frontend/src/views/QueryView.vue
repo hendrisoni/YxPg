@@ -3,13 +3,20 @@
     <!-- Toolbar -->
     <div class="flex items-center gap-2 px-3 py-1.5 border-b border-navy-border bg-navy-secondary">
       <button @click="runQuery" :disabled="!isTargetConnected || isExecuting"
-        class="flex items-center gap-1.5 px-3 py-1 text-xs bg-teal-accent text-navy-primary rounded font-medium hover:bg-teal-hover transition-colors disabled:opacity-50">
-        <svg v-if="!isExecuting" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
-          <polygon points="5 3 19 12 5 21 5 3" />
+        class="flex items-center gap-1.5 px-3 py-1 text-xs bg-teal-accent/10 border border-teal-accent/30 text-teal-accent rounded font-medium hover:bg-teal-accent/20 hover:border-teal-accent/60 hover:shadow-[0_0_10px_rgba(0,201,167,0.2)] active:scale-95 transition-all duration-150 disabled:opacity-40 disabled:pointer-events-none">
+        <svg v-if="!isExecuting" class="w-3.5 h-3.5 animate-pulse-subtle" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="6 3 20 12 6 21 6 3" />
         </svg>
-        <div v-else class="w-3.5 h-3.5 border-2 border-navy-primary border-t-transparent rounded-full animate-spin">
+        <div v-else class="w-3.5 h-3.5 border-2 border-teal-accent border-t-transparent rounded-full animate-spin">
         </div>
         {{ isExecuting ? 'Running...' : 'Run' }}
+      </button>
+
+      <button v-if="isExecuting" @click="stopQuery"
+        class="flex items-center gap-1.5 px-3 py-1 text-xs bg-accent-red/10 border border-accent-red/30 text-text-primary rounded font-medium hover:bg-accent-red/20 hover:border-accent-red/60 hover:shadow-[0_0_10px_rgba(239,68,68,0.2)] active:scale-95 transition-all duration-150 animate-fade-in">
+        <span class="w-2 h-2 bg-accent-red rounded-sm flex-shrink-0 shadow-[0_0_6px_#EF4444]"></span>
+        <span>Stop</span>
       </button>
 
       <div class="w-px h-4 bg-navy-border"></div>
@@ -72,8 +79,8 @@
 
       <!-- Context Menu -->
       <Teleport to="body">
-        <div v-if="contextMenu.visible" class="ctx-menu" :style="{ top: contextMenu.y + 'px', left: contextMenu.x + 'px' }"
-          @click.stop>
+        <div v-if="contextMenu.visible" class="ctx-menu"
+          :style="{ top: contextMenu.y + 'px', left: contextMenu.x + 'px' }" @click.stop>
           <button class="ctx-menu-item" @click="ctxCopyAll">
             <svg class="ctx-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
@@ -147,32 +154,26 @@
       <div class="flex flex-col border-t border-navy-border overflow-hidden" :style="{ height: resultHeight + 'px' }">
         <div v-if="results.length > 0" class="flex-1 flex flex-col min-h-0">
           <!-- Stack each result -->
-          <div 
-            v-for="(res, idx) in results" 
-            :key="idx"
-            class="flex flex-col flex-1 min-h-[100px]"
-            :class="{ 'border-b-4 border-navy-border/50': idx < results.length - 1 }"
-          >
+          <div v-for="(res, idx) in results" :key="idx" class="flex flex-col flex-1 min-h-[100px]"
+            :class="{ 'border-b-4 border-navy-border/50': idx < results.length - 1 }">
             <!-- Minimal header for multi-results to show which is which -->
-            <div v-if="results.length > 1" class="px-2 py-1 bg-navy-tertiary border-b border-navy-border flex items-center justify-between flex-shrink-0 z-10">
-              <span class="text-[10px] font-mono text-teal-accent/70 truncate max-w-[80%]">{{ res.raw_sql || `Result ${idx + 1}` }}</span>
+            <div v-if="results.length > 1"
+              class="px-2 py-1 bg-navy-tertiary border-b border-navy-border flex items-center justify-between flex-shrink-0 z-10">
+              <span class="text-[10px] font-mono text-teal-accent/70 truncate max-w-[80%]">{{ res.raw_sql || `Result
+                ${idx + 1}` }}</span>
               <div class="flex items-center gap-2 text-[10px] text-text-muted">
                 <span v-if="res.error" class="text-accent-red">Error</span>
                 <span v-else>{{ res.row_count }} rows</span>
                 <span>{{ res.duration_ms }}ms</span>
               </div>
             </div>
-            
+
             <div class="flex-1 min-h-0 overflow-hidden relative">
-              <ResultGrid 
-                :result="res" 
-                :executed-sql="res.raw_sql || lastExecutedSql" 
-                @refresh="runQuery" 
-              />
+              <ResultGrid :result="res" :executed-sql="res.raw_sql || lastExecutedSql" @refresh="runQuery" />
             </div>
           </div>
         </div>
-        
+
         <div v-else class="h-full flex flex-col items-center justify-center text-text-muted opacity-50">
           <svg class="w-8 h-8 mb-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
             <rect x="3" y="3" width="18" height="18" rx="2" />
@@ -530,6 +531,7 @@ async function initEditor() {
     '.cm-line': {
       lineHeight: '22px',
       padding: '0 6px',
+      borderLeft: '3px solid transparent',
     },
     '.cm-cursor': {
       borderLeftColor: '#BBBBBB',
@@ -538,16 +540,18 @@ async function initEditor() {
       borderLeftColor: '#BBBBBB',
     },
     '.cm-activeLine': {
-      backgroundColor: '#222222',
+      backgroundColor: 'rgba(0, 201, 167, 0.08)',
+      borderLeft: '3px solid #00C9A7',
+      boxShadow: 'inset 10px 0 20px -10px rgba(0, 201, 167, 0.25)',
     },
     '.cm-selectionBackground': {
-      backgroundColor: '#1e3a8a !important',
+      backgroundColor: 'rgba(0, 201, 167, 0.25) !important',
     },
     '&.cm-focused .cm-selectionBackground': {
-      backgroundColor: '#1e3a8a !important',
+      backgroundColor: 'rgba(0, 201, 167, 0.25) !important',
     },
     '.cm-selectionMatch, .cm-selectionMatch-main': {
-      backgroundColor: 'rgba(30, 58, 138, 0.4) !important',
+      backgroundColor: 'rgba(0, 201, 167, 0.15) !important',
     },
     '.cm-gutters': {
       backgroundColor: '#151515',
@@ -555,8 +559,9 @@ async function initEditor() {
       borderRight: 'none',
     },
     '.cm-activeLineGutter': {
-      backgroundColor: '#222222',
-      color: '#C6C6C6',
+      backgroundColor: 'rgba(0, 201, 167, 0.04)',
+      color: '#00C9A7',
+      fontWeight: 'bold',
     },
     '.cm-foldPlaceholder': {
       backgroundColor: '#2D2D2D',
@@ -739,21 +744,21 @@ async function initEditor() {
 // Helper to parse created/selected into tables from SQL query
 function detectAndExtractCreatedTable(sql: string): { schema: string; name: string } | null {
   const cleanSql = sql.replace(/\/\*[\s\S]*?\*\/|--.*$/gm, '') // Remove SQL comments
-  
+
   // 1. SELECT ... INTO [TEMP | TEMPORARY | UNLOGGED]? [TABLE]? <table_name> ...
   const selectIntoRegex = /\bINTO\s+(?:TEMPORARY\s+|TEMP\s+|UNLOGGED\s+)?(?:TABLE\s+)?([a-zA-Z0-9_"\.]+)/i
   const selectIntoMatch = cleanSql.match(selectIntoRegex)
   if (selectIntoMatch) {
     return parseTableName(selectIntoMatch[1])
   }
-  
+
   // 2. CREATE [GLOBAL/LOCAL TEMP/UNLOGGED] TABLE [IF NOT EXISTS] <table_name> ...
   const createTableRegex = /\bCREATE\s+(?:GLOBAL\s+|LOCAL\s+)?(?:TEMPORARY\s+|TEMP\s+|UNLOGGED\s+)?TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?([a-zA-Z0-9_"\.]+)/i
   const createTableMatch = cleanSql.match(createTableRegex)
   if (createTableMatch) {
     return parseTableName(createTableMatch[1])
   }
-  
+
   return null
 }
 
@@ -791,7 +796,7 @@ async function runQuery(customSql?: string | MouseEvent) {
 
   try {
     const bindings = connectionsStore.getWailsBindings()
-    
+
     // Check if there are multiple statements via a simple semicolon check
     // Ensure we don't count trailing semicolons
     const trimmedSql = sql.trim()
@@ -815,7 +820,7 @@ async function runQuery(customSql?: string | MouseEvent) {
         const conn = connectionsStore.connections.find(c => c.id === connId)
         const connName = conn?.name || 'Database'
         const dbName = conn?.database || 'postgres'
-        
+
         await workspaceStore.addObject({
           connection_id: connId,
           connection_name: connName,
@@ -824,7 +829,7 @@ async function runQuery(customSql?: string | MouseEvent) {
           name: createdTable.name,
           type: 'table',
         })
-        
+
         // Reload schema store tables to sync autocomplete/metadata
         try {
           await schemaStore.loadTables(connId, createdTable.schema)
@@ -845,6 +850,27 @@ async function runQuery(customSql?: string | MouseEvent) {
     }]
   } finally {
     isExecuting.value = false
+  }
+}
+
+async function stopQuery() {
+  const connId = props.tab.connectionId || connectionsStore.currentConnectionId
+  if (!connId || !isExecuting.value) return
+
+  try {
+    const bindings = connectionsStore.getWailsBindings()
+    await bindings.CancelQuery(connId)
+    uiStore.addNotification({
+      type: 'info',
+      title: 'Query Stopped',
+      message: 'Query cancellation request sent'
+    })
+  } catch (err: any) {
+    uiStore.addNotification({
+      type: 'error',
+      title: 'Stop Failed',
+      message: err.message || String(err)
+    })
   }
 }
 
@@ -935,14 +961,21 @@ function startResize(e: MouseEvent) {
   border: 1px solid #2a2a2a;
   border-radius: 8px;
   padding: 4px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255,255,255,0.04);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.04);
   backdrop-filter: blur(12px);
   animation: ctx-fade-in 0.12s ease-out;
 }
 
 @keyframes ctx-fade-in {
-  from { opacity: 0; transform: scale(0.96) translateY(-4px); }
-  to   { opacity: 1; transform: scale(1) translateY(0); }
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(-4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
 
 .ctx-menu-item {

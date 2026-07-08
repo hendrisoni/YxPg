@@ -4,9 +4,12 @@
     <div class="flex-1 flex items-center h-full overflow-x-auto no-scrollbar relative">
       <!-- Active Tab Neon Slider Line -->
       <div
-        class="absolute top-0 h-[2.5px] bg-teal-accent shadow-[0_0_8px_#00C9A7] z-20 transition-all duration-300 ease-in-out"
+        class="absolute top-0 h-[3px] bg-teal-accent shadow-[0_0_12px_#00C9A7,0_0_4px_#00C9A7] z-20 transition-all duration-300 ease-in-out"
         :style="sliderStyle"
-      ></div>
+      >
+        <!-- Soft gradient glow cast below the indicator -->
+        <div class="absolute top-[3px] left-0 right-0 h-4 bg-gradient-to-b from-teal-accent/15 to-transparent pointer-events-none blur-[2px]"></div>
+      </div>
 
       <!-- Tabs -->
       <div class="flex items-center h-full">
@@ -16,10 +19,10 @@
           :id="`tab-item-${tab.id}`"
           @click="tabsStore.setActiveTab(tab.id)"
           @contextmenu.prevent="showTabContextMenu($event, tab)"
-          class="group flex items-center gap-1.5 px-3 h-full border-r border-navy-border cursor-pointer transition-colors relative min-w-0"
+          class="group flex items-center gap-1.5 px-3 h-full border-r border-navy-border cursor-pointer transition-all relative min-w-0"
           :class="[
             tab.id === tabsStore.activeTabId
-              ? 'bg-navy-primary text-text-primary'
+              ? 'bg-navy-primary text-text-primary font-medium'
               : 'bg-navy-secondary text-text-secondary hover:bg-navy-hover hover:text-text-primary'
           ]"
         >
