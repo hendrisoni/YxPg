@@ -1,6 +1,9 @@
 <template>
   <div class="h-screen w-screen flex flex-col overflow-hidden bg-navy-primary">
-    <!-- Sidebar -->
+    <!-- Custom Title Bar -->
+    <TitleBar />
+
+    <!-- Sidebar and main layout -->
     <div class="flex flex-1 overflow-hidden">
       <Sidebar
         @new-connection="showNewConnection = true"
@@ -101,6 +104,7 @@ import { useUiStore } from '../stores/ui'
 import { setupKeyboardShortcuts } from '../utils/shortcuts'
 import type { Connection } from '../types'
 
+import TitleBar from '../components/layout/TitleBar.vue'
 import Sidebar from '../components/layout/Sidebar.vue'
 import TabBar from '../components/layout/TabBar.vue'
 import StatusBar from '../components/layout/StatusBar.vue'

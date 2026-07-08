@@ -265,19 +265,206 @@
           </div>
         </div>
 
-        <!-- SQL Editor display panel -->
-        <div class="h-40 border-t border-navy-border bg-[#070a12] flex flex-col overflow-hidden flex-shrink-0">
-          <div class="flex items-center justify-between px-3 py-1.5 border-b border-navy-border bg-navy-secondary text-[10px] text-text-muted uppercase tracking-wider font-bold">
-            <span>Generated SQL</span>
-            <button @click="copySQL" class="hover:text-text-primary text-xs flex items-center gap-1 font-semibold normal-case cursor-pointer">
-              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-              </svg>
-              Copy
-            </button>
+        <!-- Bottom Panel: Configuration Tabs & SQL Output -->
+        <div class="h-64 border-t border-navy-border bg-[#070a12] flex flex-shrink-0">
+          <!-- Left: WHERE, GROUP BY, ORDER BY Tabs -->
+          <div class="w-3/5 border-r border-navy-border flex flex-col overflow-hidden">
+            <!-- Config Tabs Header -->
+            <div class="flex items-center justify-between px-3 py-1.5 border-b border-navy-border bg-navy-secondary text-xs font-bold text-text-muted flex-shrink-0">
+              <div class="flex items-center gap-1">
+                <button
+                  v-for="t in ['Where', 'Group By', 'Order By']"
+                  :key="t"
+                  @click="activeConfigTab = t"
+                  class="px-2.5 py-0.5 rounded text-[11px] transition-colors border"
+                  :class="activeConfigTab === t ? 'bg-navy-tertiary text-teal-accent border-navy-border font-bold' : 'border-transparent hover:text-text-primary font-normal'"
+                >
+                  {{ t }}
+                </button>
+              </div>
+              
+              <button
+                v-if="activeConfigTab === 'Where' || activeConfigTab === 'Order By'"
+                @click="activeConfigTab === 'Where' ? addWhereCondition() : addOrderByCondition()"
+                class="flex items-center gap-1 text-[11px] text-teal-accent hover:text-teal-hover transition-colors"
+              >
+                <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <path d="M12 5v14M5 12h14" />
+                </svg>
+                Add Field
+              </button>
+            </div>
+            
+            <!-- Config Tabs Body -->
+            <div class="flex-1 p-3 overflow-y-auto custom-scrollbar bg-[#05080f]">
+              <!-- Where Tab Content -->
+              <div v-show="activeConfigTab === 'Where'">
+                <div v-if="whereConditions.length === 0" class="text-center py-8 text-text-muted text-xs">
+                  No WHERE conditions added. Click "+ Add Field" above to filter results.
+                </div>
+                <div v-else class="space-y-2">
+                  <div v-for="(cond, index) in whereConditions" :key="cond.id" class="flex items-center gap-2">
+                    <!-- Logical connector or WHERE label -->
+                    <div class="w-16 flex-shrink-0">
+                      <select
+                        v-if="index > 0"
+                        v-model="cond.logical"
+                        class="bg-navy-tertiary border border-navy-border text-xs text-text-primary rounded px-1.5 py-0.5 focus:border-teal-accent focus:outline-none cursor-pointer w-full font-mono text-[10px] font-bold"
+                      >
+                        <option value="AND">AND</option>
+                        <option value="OR">OR</option>
+                      </select>
+                      <span v-else class="text-[10px] uppercase font-bold text-text-muted px-2">WHERE</span>
+                    </div>
+                    
+                    <!-- Column Selection -->
+                    <select
+                      :value="`${cond.tableAlias}:${cond.columnName}`"
+                      @change="e => {
+                        const [alias, col] = (e.target as HTMLSelectElement).value.split(':');
+                        cond.tableAlias = alias;
+                        cond.columnName = col;
+                      }"
+                      class="bg-navy-tertiary border border-navy-border text-xs text-text-primary rounded px-2 py-0.5 focus:border-teal-accent focus:outline-none cursor-pointer max-w-[150px] truncate font-mono text-[11px]"
+                    >
+                      <option v-for="col in allAvailableColumns" :key="`${col.tableAlias}:${col.columnName}`" :value="`${col.tableAlias}:${col.columnName}`">
+                        {{ col.tableAlias }}.{{ col.columnName }}
+                      </option>
+                    </select>
+                    
+                    <!-- Operator Selection -->
+                    <select
+                      v-model="cond.operator"
+                      class="bg-navy-tertiary border border-navy-border text-xs text-text-primary rounded px-2 py-0.5 focus:border-teal-accent focus:outline-none cursor-pointer w-24 font-mono text-[11px]"
+                    >
+                      <option v-for="op in ['=', '!=', '<', '>', '<=', '>=', 'LIKE', 'ILIKE', 'IN', 'NOT IN', 'IS NULL', 'IS NOT NULL']" :key="op" :value="op">
+                        {{ op }}
+                      </option>
+                    </select>
+                    
+                    <!-- Value input -->
+                    <input
+                      v-if="cond.operator !== 'IS NULL' && cond.operator !== 'IS NOT NULL'"
+                      type="text"
+                      v-model="cond.value"
+                      placeholder="Value..."
+                      class="bg-navy-tertiary border border-navy-border text-xs text-text-primary rounded px-2 py-0.5 focus:border-teal-accent focus:outline-none flex-1 font-mono text-[11px]"
+                    />
+                    <div v-else class="flex-1"></div>
+                    
+                    <!-- Remove Button -->
+                    <button
+                      @click="removeWhereCondition(cond.id)"
+                      class="p-1 rounded text-text-muted hover:text-accent-red transition-colors cursor-pointer"
+                      title="Remove condition"
+                    >
+                      <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 6 6 18M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Group By Tab Content -->
+              <div v-show="activeConfigTab === 'Group By'">
+                <div v-if="allAvailableColumns.length === 0" class="text-center py-8 text-text-muted text-xs">
+                  Drag tables onto the canvas first to view available fields for grouping.
+                </div>
+                <div v-else class="grid grid-cols-2 md:grid-cols-3 gap-2">
+                  <label
+                    v-for="col in allAvailableColumns"
+                    :key="`${col.tableAlias}:${col.columnName}`"
+                    class="flex items-center gap-2 p-1.5 rounded border border-navy-border bg-[#0b0f19] cursor-pointer hover:border-teal-accent/50 hover:bg-[#111927] transition-all"
+                  >
+                    <input
+                      type="checkbox"
+                      :checked="isGroupBySelected(col.tableAlias, col.columnName)"
+                      @change="toggleGroupBy(col.tableAlias, col.columnName)"
+                      class="w-3.5 h-3.5 rounded border-[#202e42] bg-navy-tertiary text-teal-accent focus:ring-0 cursor-pointer"
+                    />
+                    <span class="text-[11px] text-text-secondary truncate select-none font-mono">
+                      {{ col.tableAlias }}.{{ col.columnName }}
+                    </span>
+                  </label>
+                </div>
+              </div>
+              
+              <!-- Order By Tab Content -->
+              <div v-show="activeConfigTab === 'Order By'">
+                <div v-if="orderByConditions.length === 0" class="text-center py-8 text-text-muted text-xs">
+                  No ORDER BY conditions added. Click "+ Add Field" above to sort results.
+                </div>
+                <div v-else class="space-y-2">
+                  <div v-for="(cond, index) in orderByConditions" :key="cond.id" class="flex items-center gap-2">
+                    <span class="text-[10px] uppercase font-bold text-text-muted w-16 text-center">ORDER BY</span>
+                    
+                    <!-- Column Selection -->
+                    <select
+                      :value="`${cond.tableAlias}:${cond.columnName}`"
+                      @change="e => {
+                        const [alias, col] = (e.target as HTMLSelectElement).value.split(':');
+                        cond.tableAlias = alias;
+                        cond.columnName = col;
+                      }"
+                      class="bg-navy-tertiary border border-navy-border text-xs text-text-primary rounded px-2 py-0.5 focus:border-teal-accent focus:outline-none cursor-pointer max-w-[200px] truncate font-mono text-[11px]"
+                    >
+                      <option v-for="col in allAvailableColumns" :key="`${col.tableAlias}:${col.columnName}`" :value="`${col.tableAlias}:${col.columnName}`">
+                        {{ col.tableAlias }}.{{ col.columnName }}
+                      </option>
+                    </select>
+                    
+                    <!-- Direction Selection -->
+                    <select
+                      v-model="cond.direction"
+                      class="bg-navy-tertiary border border-navy-border text-xs text-text-primary rounded px-2 py-0.5 focus:border-teal-accent focus:outline-none cursor-pointer w-20 font-mono text-[11px]"
+                    >
+                      <option value="ASC">ASC</option>
+                      <option value="DESC">DESC</option>
+                    </select>
+                    
+                    <div class="flex-1"></div>
+                    
+                    <!-- Remove Button -->
+                    <button
+                      @click="removeOrderByCondition(cond.id)"
+                      class="p-1 rounded text-text-muted hover:text-accent-red transition-colors cursor-pointer"
+                      title="Remove sort"
+                    >
+                      <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 6 6 18M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-          <div class="flex-1 p-3 overflow-auto font-mono text-xs text-[#a5b4fc] bg-[#030712] whitespace-pre-wrap select-text">
-            {{ generatedSQL || '-- Drag tables and check columns to generate query' }}
+          
+          <!-- Right: Generated SQL -->
+          <div class="w-2/5 flex flex-col overflow-hidden bg-[#070a12]">
+            <div class="flex items-center justify-between px-3 py-1.5 border-b border-navy-border bg-navy-secondary text-[10px] text-text-muted uppercase tracking-wider font-bold flex-shrink-0">
+              <span>Generated SQL</span>
+              <div class="flex items-center gap-3">
+                <button @click="openInQuery" class="hover:text-text-primary text-xs flex items-center gap-1 font-semibold normal-case cursor-pointer" title="Open in standard query editor">
+                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                    <polyline points="15 3 21 3 21 9" />
+                    <line x1="10" y1="14" x2="21" y2="3" />
+                  </svg>
+                  Open in Query
+                </button>
+                <button @click="copySQL" class="hover:text-text-primary text-xs flex items-center gap-1 font-semibold normal-case cursor-pointer">
+                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                  </svg>
+                  Copy
+                </button>
+              </div>
+            </div>
+            <div class="flex-1 p-3 overflow-auto font-mono text-xs text-[#a5b4fc] bg-[#030712] whitespace-pre-wrap select-text">
+              {{ generatedSQL || '-- Drag tables and check columns to generate query' }}
+            </div>
           </div>
         </div>
       </div>
@@ -359,6 +546,89 @@ interface CanvasJoin {
 
 const tables = ref<CanvasTable[]>([])
 const joins = ref<CanvasJoin[]>([])
+
+const activeConfigTab = ref('Where')
+
+interface WhereCondition {
+  id: string
+  tableAlias: string
+  columnName: string
+  operator: string
+  value: string
+  logical: 'AND' | 'OR'
+}
+
+interface OrderCondition {
+  id: string
+  tableAlias: string
+  columnName: string
+  direction: 'ASC' | 'DESC'
+}
+
+const whereConditions = ref<WhereCondition[]>([])
+const groupByColumns = ref<{ tableAlias: string; columnName: string }[]>([])
+const orderByConditions = ref<OrderCondition[]>([])
+
+const allAvailableColumns = computed(() => {
+  const list: Array<{ label: string; tableAlias: string; columnName: string; type: string }> = []
+  for (const table of tables.value) {
+    for (const col of table.columns) {
+      list.push({
+        label: `${table.alias}.${col.name}`,
+        tableAlias: table.alias,
+        columnName: col.name,
+        type: col.type
+      })
+    }
+  }
+  return list
+})
+
+function addWhereCondition() {
+  const cols = allAvailableColumns.value
+  if (cols.length === 0) return
+  whereConditions.value.push({
+    id: `where_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+    tableAlias: cols[0].tableAlias,
+    columnName: cols[0].columnName,
+    operator: '=',
+    value: '',
+    logical: 'AND'
+  })
+}
+
+function removeWhereCondition(id: string) {
+  whereConditions.value = whereConditions.value.filter(c => c.id !== id)
+}
+
+function isGroupBySelected(tableAlias: string, columnName: string): boolean {
+  return groupByColumns.value.some(g => g.tableAlias === tableAlias && g.columnName === columnName)
+}
+
+function toggleGroupBy(tableAlias: string, columnName: string) {
+  const index = groupByColumns.value.findIndex(g => g.tableAlias === tableAlias && g.columnName === columnName)
+  if (index >= 0) {
+    groupByColumns.value.splice(index, 1)
+  } else {
+    groupByColumns.value.push({ tableAlias, columnName })
+  }
+}
+
+function addOrderByCondition() {
+  const cols = allAvailableColumns.value
+  if (cols.length === 0) return
+  orderByConditions.value.push({
+    id: `order_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+    tableAlias: cols[0].tableAlias,
+    columnName: cols[0].columnName,
+    direction: 'ASC'
+  })
+}
+
+function removeOrderByCondition(id: string) {
+  orderByConditions.value = orderByConditions.value.filter(o => o.id !== id)
+}
+
 
 let aliasCounter = 0
 let maxZIndex = 10
@@ -483,7 +753,57 @@ const generatedSQL = computed(() => {
     }
   }
 
-  return `SELECT\n  ${selectParts.join(',\n  ')}\nFROM ${fromClause}`
+  let query = `SELECT\n  ${selectParts.join(',\n  ')}\nFROM ${fromClause}`
+
+  // Append WHERE conditions
+  if (whereConditions.value.length > 0) {
+    const conds: string[] = []
+    whereConditions.value.forEach((cond, idx) => {
+      let val = cond.value
+      const op = cond.operator
+      let expr = ''
+      if (op === 'IS NULL' || op === 'IS NOT NULL') {
+        expr = `${cond.tableAlias}.${cond.columnName} ${op}`
+      } else {
+        let formattedVal = val
+        if (op === 'LIKE' || op === 'ILIKE' || op === 'NOT LIKE') {
+          if (!formattedVal.startsWith("'") && !formattedVal.endsWith("'")) {
+            formattedVal = `'${formattedVal}'`
+          }
+        } else if (op === 'IN' || op === 'NOT IN') {
+          if (!formattedVal.startsWith('(') && !formattedVal.endsWith(')')) {
+            formattedVal = `(${formattedVal})`
+          }
+        } else {
+          if (isNaN(Number(formattedVal)) && !formattedVal.startsWith("'") && !formattedVal.endsWith("'") && formattedVal.toLowerCase() !== 'true' && formattedVal.toLowerCase() !== 'false' && formattedVal.toLowerCase() !== 'null') {
+            formattedVal = `'${formattedVal}'`
+          }
+        }
+        expr = `${cond.tableAlias}.${cond.columnName} ${op} ${formattedVal}`
+      }
+
+      if (idx === 0) {
+        conds.push(expr)
+      } else {
+        conds.push(`${cond.logical} ${expr}`)
+      }
+    })
+    query += `\nWHERE ${conds.join(' ')}`
+  }
+
+  // Append GROUP BY
+  if (groupByColumns.value.length > 0) {
+    const cols = groupByColumns.value.map(g => `${g.tableAlias}.${g.columnName}`)
+    query += `\nGROUP BY ${cols.join(', ')}`
+  }
+
+  // Append ORDER BY
+  if (orderByConditions.value.length > 0) {
+    const cols = orderByConditions.value.map(o => `${o.tableAlias}.${o.columnName} ${o.direction}`)
+    query += `\nORDER BY ${cols.join(', ')}`
+  }
+
+  return query
 })
 
 // Recursively find database objects in Pinia Tree Nodes
@@ -636,6 +956,13 @@ function endResizeTable() {
 }
 
 function removeTable(id: string) {
+  const table = tables.value.find(t => t.id === id)
+  if (table) {
+    const alias = table.alias
+    whereConditions.value = whereConditions.value.filter(w => w.tableAlias !== alias)
+    groupByColumns.value = groupByColumns.value.filter(g => g.tableAlias !== alias)
+    orderByConditions.value = orderByConditions.value.filter(o => o.tableAlias !== alias)
+  }
   tables.value = tables.value.filter(t => t.id !== id)
   joins.value = joins.value.filter(j => j.fromTableId !== id && j.toTableId !== id)
   recalculatePositions()
@@ -649,6 +976,9 @@ function toggleSelectAll(table: CanvasTable) {
 function clearCanvas() {
   tables.value = []
   joins.value = []
+  whereConditions.value = []
+  groupByColumns.value = []
+  orderByConditions.value = []
   aliasCounter = 0
 }
 
@@ -850,6 +1180,20 @@ function copySQL() {
       type: 'info',
       title: 'Copied',
       message: 'SQL query copied to clipboard',
+    })
+  }
+}
+
+function openInQuery() {
+  if (generatedSQL.value) {
+    tabsStore.createTab('query', {
+      sql: generatedSQL.value,
+      connectionId: props.tab.connectionId || connectionsStore.currentConnectionId
+    })
+    uiStore.addNotification({
+      type: 'info',
+      title: 'Query Opened',
+      message: 'Generated SQL opened in a new query tab',
     })
   }
 }
