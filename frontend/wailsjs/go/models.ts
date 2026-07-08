@@ -1,3 +1,44 @@
+export namespace export {
+	
+	export class BackupOptions {
+	    connection_id: string;
+	    database: string;
+	    output_path: string;
+	    format: string;
+	    schema_only: boolean;
+	    data_only: boolean;
+	    clean: boolean;
+	    create: boolean;
+	    inserts: boolean;
+	    column_inserts: boolean;
+	    disable_triggers: boolean;
+	    verbose: boolean;
+	    pg_bin_path: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new BackupOptions(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.connection_id = source["connection_id"];
+	        this.database = source["database"];
+	        this.output_path = source["output_path"];
+	        this.format = source["format"];
+	        this.schema_only = source["schema_only"];
+	        this.data_only = source["data_only"];
+	        this.clean = source["clean"];
+	        this.create = source["create"];
+	        this.inserts = source["inserts"];
+	        this.column_inserts = source["column_inserts"];
+	        this.disable_triggers = source["disable_triggers"];
+	        this.verbose = source["verbose"];
+	        this.pg_bin_path = source["pg_bin_path"];
+	    }
+	}
+
+}
+
 export namespace main {
 	
 	export class CatalogItem {

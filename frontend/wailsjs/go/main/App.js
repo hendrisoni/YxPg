@@ -14,6 +14,14 @@ export function AlterTable(arg1, arg2, arg3) {
   return window['go']['main']['App']['AlterTable'](arg1, arg2, arg3);
 }
 
+export function BrowseBackupFile(arg1) {
+  return window['go']['main']['App']['BrowseBackupFile'](arg1);
+}
+
+export function BrowseBackupFolder() {
+  return window['go']['main']['App']['BrowseBackupFolder']();
+}
+
 export function BrowseTable(arg1, arg2, arg3, arg4) {
   return window['go']['main']['App']['BrowseTable'](arg1, arg2, arg3, arg4);
 }
@@ -90,6 +98,10 @@ export function GetDatabaseName(arg1) {
   return window['go']['main']['App']['GetDatabaseName'](arg1);
 }
 
+export function GetDatabases(arg1) {
+  return window['go']['main']['App']['GetDatabases'](arg1);
+}
+
 export function GetDefaultConnectionConfig() {
   return window['go']['main']['App']['GetDefaultConnectionConfig']();
 }
@@ -108,6 +120,14 @@ export function GetFunctions(arg1, arg2) {
 
 export function GetIndexes(arg1, arg2, arg3) {
   return window['go']['main']['App']['GetIndexes'](arg1, arg2, arg3);
+}
+
+export function GetInitialQuery() {
+  return window['go']['main']['App']['GetInitialQuery']();
+}
+
+export function GetPgBinPath() {
+  return window['go']['main']['App']['GetPgBinPath']();
 }
 
 export function GetQueryHistory(arg1, arg2) {
@@ -166,6 +186,10 @@ export function LoadWorkspace() {
   return window['go']['main']['App']['LoadWorkspace']();
 }
 
+export function OpenFolder(arg1) {
+  return window['go']['main']['App']['OpenFolder'](arg1);
+}
+
 export function RefreshSchema(arg1) {
   return window['go']['main']['App']['RefreshSchema'](arg1);
 }
@@ -174,12 +198,20 @@ export function RenameTable(arg1, arg2, arg3, arg4) {
   return window['go']['main']['App']['RenameTable'](arg1, arg2, arg3, arg4);
 }
 
+export function SavePgBinPath(arg1) {
+  return window['go']['main']['App']['SavePgBinPath'](arg1);
+}
+
 export function SaveQuery(arg1, arg2) {
   return window['go']['main']['App']['SaveQuery'](arg1, arg2);
 }
 
 export function SaveWorkspace(arg1) {
   return window['go']['main']['App']['SaveWorkspace'](arg1);
+}
+
+export function StartBackup(arg1) {
+  return window['go']['main']['App']['StartBackup'](arg1);
 }
 
 export function SyncPgAdminConnections() {

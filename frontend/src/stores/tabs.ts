@@ -113,6 +113,7 @@ export const useTabsStore = defineStore('tabs', () => {
       case 'ddl': return options.title || options.table || 'DDL'
       case 'home': return 'Home'
       case 'log': return 'Query Log'
+      case 'backup': return 'Backup'
       default: return 'Untitled'
     }
   }

@@ -42,7 +42,19 @@
       </div>
 
       <!-- Bottom Icons -->
-      <div class="flex flex-col items-center w-full">
+      <div class="flex flex-col items-center w-full gap-3">
+        <!-- Backup Button -->
+        <button @click="$emit('openBackup')"
+          class="p-2 rounded-lg text-text-secondary hover:text-teal-accent hover:bg-navy-hover transition-colors cursor-pointer"
+          title="Backup Database (pg_dump)">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="17 8 12 3 7 8" />
+            <line x1="12" y1="3" x2="12" y2="15" />
+          </svg>
+        </button>
+
         <!-- Settings Button -->
         <button @click="$emit('openSettings')"
           class="p-2 rounded-lg text-text-secondary hover:text-teal-accent hover:bg-navy-hover transition-colors cursor-pointer"
@@ -132,7 +144,7 @@ import { useUiStore } from '../../stores/ui'
 import type { TreeNode } from '../../types'
 import SchemaTreeNode from '../schema/SchemaTreeNode.vue'
 
-const emit = defineEmits(['toggle', 'newConnection', 'searchTable', 'openSettings', 'openWorkspace'])
+const emit = defineEmits(['toggle', 'newConnection', 'searchTable', 'openSettings', 'openWorkspace', 'openBackup'])
 
 const connectionsStore = useConnectionsStore()
 const workspaceStore = useWorkspaceStore()

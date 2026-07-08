@@ -6,7 +6,9 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -20,6 +22,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	_ "github.com/mattn/go-sqlite3"
+	wailsruntime "github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 // App struct
@@ -32,11 +35,44 @@ type App struct {
 	ddlExec        *ddl.Executor
 	builder        *ddl.Builder
 	workspaceStore *connection.WorkspaceStore
+	initialQuery   string
 }
 
 // NewApp creates a new App application struct
 func NewApp() *App {
-	return &App{}
+	initialQuery := ""
+	args := os.Args[1:]
+	for i := 0; i < len(args); i++ {
+		arg := args[i]
+
+		// Handle q=...
+		if strings.HasPrefix(strings.ToLower(arg), "q=") {
+			initialQuery = arg[2:]
+			break
+		}
+
+		// Handle -q or --query
+		if (arg == "-q" || arg == "--query") && i+1 < len(args) {
+			initialQuery = args[i+1]
+			break
+		}
+
+		// Handle cases where the argument itself is a raw SQL query
+		lowerArg := strings.ToLower(strings.TrimSpace(arg))
+		if strings.HasPrefix(lowerArg, "select ") ||
+			strings.HasPrefix(lowerArg, "insert ") ||
+			strings.HasPrefix(lowerArg, "update ") ||
+			strings.HasPrefix(lowerArg, "delete ") ||
+			strings.HasPrefix(lowerArg, "with ") ||
+			strings.HasPrefix(lowerArg, "create ") {
+			initialQuery = arg
+			break
+		}
+	}
+
+	return &App{
+		initialQuery: initialQuery,
+	}
 }
 
 // startup is called when the app starts
@@ -83,6 +119,11 @@ func (a *App) startup(ctx context.Context) {
 		}
 		a.manager.ConnectAll()
 	}()
+}
+
+// GetInitialQuery returns the query passed via command line, if any
+func (a *App) GetInitialQuery() string {
+	return a.initialQuery
 }
 
 // shutdown is called when the app stops
@@ -308,6 +349,176 @@ func (a *App) ExportData(result models.QueryResult, format string, schemaName, t
 	default:
 		return "", fmt.Errorf("unsupported format: %s", format)
 	}
+}
+
+// GetDatabases returns all databases for a connection
+func (a *App) GetDatabases(connID string) ([]string, error) {
+	pool, err := a.manager.GetPool(connID)
+	if err != nil {
+		return nil, err
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	rows, err := pool.Query(ctx, "SELECT datname FROM pg_database WHERE datistemplate = false ORDER BY datname")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var dbs []string
+	for rows.Next() {
+		var db string
+		if err := rows.Scan(&db); err == nil {
+			dbs = append(dbs, db)
+		}
+	}
+	return dbs, nil
+}
+
+// BrowseBackupFile opens save dialog and returns the file path
+func (a *App) BrowseBackupFile(defaultFilename string) (string, error) {
+	return wailsruntime.SaveFileDialog(a.ctx, wailsruntime.SaveDialogOptions{
+		DefaultFilename: defaultFilename,
+		Title:           "Choose Backup Save Location",
+		Filters: []wailsruntime.FileFilter{
+			{DisplayName: "SQL Files (*.sql)", Pattern: "*.sql"},
+			{DisplayName: "Backup Files (*.backup; *.dump)", Pattern: "*.backup;*.dump"},
+			{DisplayName: "All Files (*.*)", Pattern: "*.*"},
+		},
+	})
+}
+
+// BrowseBackupFolder opens folder selection dialog and returns the path
+func (a *App) BrowseBackupFolder() (string, error) {
+	return wailsruntime.OpenDirectoryDialog(a.ctx, wailsruntime.OpenDialogOptions{
+		Title: "Choose Backup Directory",
+	})
+}
+
+// StartBackup begins the pg_dump process
+func (a *App) StartBackup(opts export.BackupOptions) error {
+	conn, err := a.manager.GetConn(opts.ConnectionID)
+	if err != nil {
+		return fmt.Errorf("failed to retrieve connection: %w", err)
+	}
+	if conn == nil {
+		return fmt.Errorf("connection not found: %s", opts.ConnectionID)
+	}
+
+	// Fallback to config path if not provided by frontend
+	if opts.PgBinPath == "" {
+		config := a.loadConfigMap()
+		opts.PgBinPath = config["pg_bin_path"]
+	}
+
+	return export.RunPgDump(a.ctx, *conn, opts)
+}
+
+// OpenFolder opens the folder containing the specified path in the OS file explorer
+func (a *App) OpenFolder(path string) error {
+	fi, err := os.Stat(path)
+	var dir string
+	if err == nil && fi.IsDir() {
+		dir = path
+	} else {
+		dir = filepath.Dir(path)
+	}
+
+	var cmd *exec.Cmd
+	switch runtime.GOOS {
+	case "windows":
+		cmd = exec.Command("explorer", filepath.Clean(dir))
+	case "darwin":
+		cmd = exec.Command("open", dir)
+	default:
+		cmd = exec.Command("xdg-open", dir)
+	}
+	return cmd.Start()
+}
+
+// GetPgBinPath reads pg_bin_path from configuration file yxpg.conf
+func (a *App) GetPgBinPath() string {
+	config := a.loadConfigMap()
+	return config["pg_bin_path"]
+}
+
+// SavePgBinPath updates pg_bin_path in configuration file yxpg.conf
+func (a *App) SavePgBinPath(path string) error {
+	return a.saveConfigValue("pg_bin_path", path)
+}
+
+// saveConfigValue writes or updates a configuration key in yxpg.conf
+func (a *App) saveConfigValue(key, value string) error {
+	filename := "yxpg.conf"
+	
+	// Locate config path using the same search order
+	var paths []string
+	if cwd, err := os.Getwd(); err == nil {
+		paths = append(paths, filepath.Join(cwd, filename))
+	}
+	if exePath, err := os.Executable(); err == nil {
+		paths = append(paths, filepath.Join(filepath.Dir(exePath), filename))
+	}
+	if homeDir, err := os.UserHomeDir(); err == nil {
+		paths = append(paths, filepath.Join(homeDir, ".yxpg", filename))
+	}
+
+	var activePath string
+	for _, p := range paths {
+		if _, err := os.Stat(p); err == nil {
+			activePath = p
+			break
+		}
+	}
+
+	// If none found, write to user home ~/.yxpg/yxpg.conf
+	if activePath == "" {
+		if homeDir, err := os.UserHomeDir(); err == nil {
+			configDir := filepath.Join(homeDir, ".yxpg")
+			_ = os.MkdirAll(configDir, 0755)
+			activePath = filepath.Join(configDir, filename)
+		}
+	}
+
+	if activePath == "" {
+		return fmt.Errorf("unable to determine configuration file path")
+	}
+
+	// Read existing file lines
+	var lines []string
+	found := false
+
+	if file, err := os.Open(activePath); err == nil {
+		scanner := bufio.NewScanner(file)
+		for scanner.Scan() {
+			line := scanner.Text()
+			trimmed := strings.TrimSpace(line)
+			if !strings.HasPrefix(trimmed, "#") && !strings.HasPrefix(trimmed, ";") && strings.Contains(trimmed, "=") {
+				parts := strings.SplitN(trimmed, "=", 2)
+				if strings.TrimSpace(parts[0]) == key {
+					// Update line
+					line = fmt.Sprintf("%s=%s", key, value)
+					found = true
+				}
+			}
+			lines = append(lines, line)
+		}
+		file.Close()
+	}
+
+	// If key was not found in the file, append it
+	if !found {
+		lines = append(lines, fmt.Sprintf("%s=%s", key, value))
+	}
+
+	// Write back to file
+	content := strings.Join(lines, "\n")
+	if !strings.HasSuffix(content, "\n") {
+		content += "\n"
+	}
+
+	return os.WriteFile(activePath, []byte(content), 0644)
 }
 
 // ==================== UTILITY METHODS ====================

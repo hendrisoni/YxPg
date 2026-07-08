@@ -10,6 +10,7 @@
         @search-table="showTableSearch = !showTableSearch"
         @open-settings="showSettings = true"
         @open-workspace="showWorkspaceModal = true"
+        @open-backup="handleOpenBackup"
       />
 
       <!-- Resize Handle -->
@@ -49,6 +50,11 @@
           <QueryLogView
             v-else-if="tabsStore.activeTab.type === 'log'"
             :key="'log-' + tabsStore.activeTab.id"
+          />
+          <BackupView
+            v-else-if="tabsStore.activeTab.type === 'backup'"
+            :tab="tabsStore.activeTab"
+            :key="'backup-' + tabsStore.activeTab.id"
           />
         </div>
       </div>
@@ -103,6 +109,7 @@ import { useTabsStore } from '../stores/tabs'
 import { useUiStore } from '../stores/ui'
 import { setupKeyboardShortcuts } from '../utils/shortcuts'
 import type { Connection } from '../types'
+import * as App from '../../wailsjs/go/main/App'
 
 import TitleBar from '../components/layout/TitleBar.vue'
 import Sidebar from '../components/layout/Sidebar.vue'
@@ -119,6 +126,7 @@ import TableView from './TableView.vue'
 import BuilderView from './BuilderView.vue'
 import DDLView from './DDLView.vue'
 import QueryLogView from './QueryLogView.vue'
+import BackupView from './BackupView.vue'
 
 const connectionsStore = useConnectionsStore()
 const schemaStore = useSchemaStore()
@@ -155,7 +163,22 @@ const handleToggleSearch = () => {
 }
 
 onMounted(() => {
+  uiStore.loadSettings()
   connectionsStore.loadConnections()
+
+  // Handle command-line initial query if any
+  App.GetInitialQuery().then((q: string) => {
+    if (q && q.trim()) {
+      tabsStore.createTab('query', {
+        title: 'CLI Query',
+        sql: q,
+        connectionId: connectionsStore.currentConnectionId || undefined
+      })
+    }
+  }).catch((err: any) => {
+    console.error('Failed to get initial query:', err)
+  })
+
   window.addEventListener('toggle-table-search', handleToggleSearch)
   const cleanup = setupKeyboardShortcuts({
     newQueryTab: () => createNewTab(),
@@ -203,6 +226,10 @@ function createNewTab() {
 
 function openQueryBuilder() {
   tabsStore.createTab('builder', { title: 'Query Builder' })
+}
+
+function handleOpenBackup() {
+  tabsStore.createTab('backup', { title: 'Backup' })
 }
 
 async function handleSaveConnection(conn: Connection) {

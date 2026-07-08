@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { Notification } from '../types'
+import * as App from '../../wailsjs/go/main/App'
 
 export const useUiStore = defineStore('ui', () => {
   const sidebarOpen = computed(() => true)
@@ -64,12 +65,29 @@ export const useUiStore = defineStore('ui', () => {
 
   // Settings state
   const settings = ref({
-    showFunctionsInSearch: localStorage.getItem('settings:showFunctionsInSearch') !== 'false'
+    showFunctionsInSearch: localStorage.getItem('settings:showFunctionsInSearch') !== 'false',
+    pgBinPath: ''
   })
 
-  function updateSetting(key: 'showFunctionsInSearch', value: boolean) {
-    settings.value[key] = value
-    localStorage.setItem(`settings:${key}`, String(value))
+  async function loadSettings() {
+    try {
+      const path = await App.GetPgBinPath()
+      settings.value.pgBinPath = path || ''
+    } catch (e) {
+      console.error('Failed to load pgBinPath from config:', e)
+    }
+  }
+
+  function updateSetting(key: 'showFunctionsInSearch' | 'pgBinPath', value: any) {
+    if (key === 'showFunctionsInSearch') {
+      settings.value.showFunctionsInSearch = value
+      localStorage.setItem(`settings:${key}`, String(value))
+    } else if (key === 'pgBinPath') {
+      settings.value.pgBinPath = value
+      App.SavePgBinPath(value).catch((e: any) => {
+        console.error('Failed to save pgBinPath to config:', e)
+      })
+    }
   }
 
   return {
@@ -92,6 +110,7 @@ export const useUiStore = defineStore('ui', () => {
     setResultPanelHeight,
     settings,
     updateSetting,
+    loadSettings,
   }
 }
 )

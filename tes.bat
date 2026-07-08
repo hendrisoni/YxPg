@@ -1,0 +1,3 @@
+@echo off
+echo Running YxPg with sample query...
+start "" yxpg.exe q="SELECT 'Hello, World!' AS message, now() AS current_time;"
