@@ -85,6 +85,7 @@
         @view-ddl="(schema, name, connId) => $emit('view-ddl', schema, name, connId)"
         @drop-table="$emit('drop-table', $event)"
         @delete-node="$emit('delete-node', $event)"
+        @rename-node="(id, label) => $emit('rename-node', id, label)"
       />
     </div>
 
@@ -124,6 +125,7 @@ const emit = defineEmits([
   'view-ddl',
   'drop-table',
   'delete-node',
+  'rename-node',
   'select-node',
 ])
 
@@ -323,6 +325,11 @@ function handleDrop(event: DragEvent, targetId: string) {
 }
 
 const contextMenuItems = computed<ContextMenuItem[]>(() => {
+  if (props.node.type === 'category') {
+    return [
+      { label: 'Rename', action: 'rename' },
+    ]
+  }
   if (props.node.type === 'table' || props.node.type === 'view') {
     return [
       { label: `Open ${props.node.type === 'table' ? 'Table' : 'View'}`, action: 'open' },
@@ -334,7 +341,7 @@ const contextMenuItems = computed<ContextMenuItem[]>(() => {
 })
 
 function showContextMenu(event: MouseEvent) {
-  if (props.node.type === 'table' || props.node.type === 'view') {
+  if (props.node.type === 'table' || props.node.type === 'view' || props.node.type === 'category') {
     event.preventDefault()
     menuX.value = event.clientX
     menuY.value = event.clientY
@@ -344,6 +351,12 @@ function showContextMenu(event: MouseEvent) {
 
 async function handleMenuSelect(action: string) {
   showMenu.value = false
+
+  if (action === 'rename') {
+    emit('rename-node', props.node.id, props.node.label)
+    return
+  }
+
   const connectionId = props.node.data?.connectionId || connectionsStore.currentConnectionId
   const schema = props.node.data?.schema
   const table = props.node.label

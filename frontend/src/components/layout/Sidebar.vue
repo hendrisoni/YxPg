@@ -128,6 +128,7 @@
           @view-ddl="handleViewDDL"
           @drop-table="handleDropTable"
           @delete-node="handleDeleteNode"
+          @rename-node="handleRenameNode"
         />
       </div>
 
@@ -214,6 +215,13 @@ function handleRootDrop(event: DragEvent) {
 function handleDeleteNode(id: string) {
   if (confirm('Are you sure you want to remove this item from your workspace?')) {
     workspaceStore.deleteNode(id)
+  }
+}
+
+function handleRenameNode(id: string, currentLabel: string) {
+  const name = prompt('Rename category:', currentLabel)
+  if (name && name.trim() && name.trim() !== currentLabel) {
+    workspaceStore.renameNode(id, name.trim())
   }
 }
 
