@@ -1,8 +1,10 @@
-# YxPg
+# YxPg - Portable Postgres Studio
 
 YxPg adalah aplikasi desktop GUI untuk PostgreSQL yang dibangun dengan Wails, Go, Vue 3, dan TypeScript. Aplikasi ini menyediakan workspace database, browser schema, editor query, query history, DDL tools, dan ekspor data dalam satu antarmuka desktop.
 
-![YxPg Studio](frontend/public/yxpgstudio.png)
+![Visualisasi Skema Database](frontend/public/database_schema_viz.png)
+
+![Screenshot Aplikasi](frontend/public/sc1.png)
 
 ## Fitur
 
@@ -172,7 +174,7 @@ wails dev
 
 - Pastikan `.gitignore` sudah mengecualikan `frontend/node_modules/`, `frontend/dist/`, `build/`, `*.exe`, dan `yxpg.conf`.
 - Hapus binary lokal seperti `yxpg.exe` jika sempat ter-track oleh Git.
-- Tambahkan `LICENSE` sesuai rencana distribusi proyek.
+- File `LICENSE` (MIT License) sudah ditambahkan untuk distribusi publik.
 - Tambahkan `yxpg.conf.example` jika pengguna lain perlu contoh konfigurasi.
 - Jalankan build terakhir:
 
@@ -182,4 +184,5 @@ wails build
 
 ## Lisensi
 
-Belum ditentukan. Tambahkan file `LICENSE` sebelum repository dipublish.
+Proyek ini dilisensikan di bawah [MIT License](LICENSE) - bebas untuk digunakan, dimodifikasi, dan didistribusikan secara gratis.
+
