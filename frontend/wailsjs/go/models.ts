@@ -550,6 +550,7 @@ export namespace models {
 	    error?: string;
 	    query_type: string;
 	    rows_affected?: number;
+	    raw_sql?: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new QueryResult(source);
@@ -565,6 +566,7 @@ export namespace models {
 	        this.error = source["error"];
 	        this.query_type = source["query_type"];
 	        this.rows_affected = source["rows_affected"];
+	        this.raw_sql = source["raw_sql"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {

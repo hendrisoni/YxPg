@@ -30,6 +30,61 @@ func (e *Executor) Execute(ctx context.Context, connID, sql string, timeout int)
 	return e.ExecuteWithConnection(ctx, connID, sql, timeout)
 }
 
+// ExecuteMultiple splits by semicolon and runs multiple statements, returning array of results
+func (e *Executor) ExecuteMultiple(ctx context.Context, connID, sql string, timeout int) []models.QueryResult {
+	if timeout <= 0 {
+		timeout = 30
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, time.Duration(timeout)*time.Second)
+	defer cancel()
+
+	// Very basic split by semicolon, ignoring those inside quotes (simplified)
+	// A proper parser is better, but this handles 90% of basic scripts
+	statements := splitSQLStatements(sql)
+	var results []models.QueryResult
+
+	for _, stmt := range statements {
+		if stmt == "" {
+			continue
+		}
+		res := e.ExecuteWithConnection(ctx, connID, stmt, timeout)
+		res.RawSQL = stmt // pony: add RawSQL to result for UI tab labels
+		results = append(results, res)
+	}
+
+	if len(results) == 0 {
+		// Fallback if split fails or empty
+		return []models.QueryResult{e.ExecuteWithConnection(ctx, connID, sql, timeout)}
+	}
+
+	return results
+}
+
+// splitSQLStatements splits a script by ';' but tries to ignore semicolons inside single quotes
+func splitSQLStatements(sql string) []string {
+	var stmts []string
+	var current []rune
+	inQuote := false
+
+	for _, char := range sql {
+		if char == '\'' {
+			inQuote = !inQuote
+		}
+		if char == ';' && !inQuote {
+			stmts = append(stmts, string(current))
+			current = []rune{}
+		} else {
+			current = append(current, char)
+		}
+	}
+	if len(current) > 0 {
+		// add remaining
+		stmts = append(stmts, string(current))
+	}
+	return stmts
+}
+
 // ExecuteWithConnection executes a SQL query via pgxpool
 func (e *Executor) ExecuteWithConnection(ctx context.Context, connID, sql string, timeout int) models.QueryResult {
 	if timeout <= 0 {

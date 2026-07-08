@@ -29,6 +29,8 @@ export function DropIndex(arg1:string,arg2:string):Promise<void>;
 
 export function DropTable(arg1:string,arg2:string,arg3:string,arg4:boolean):Promise<void>;
 
+export function ExecuteMultipleQueries(arg1:string,arg2:string,arg3:number):Promise<Array<models.QueryResult>>;
+
 export function ExecuteQuery(arg1:string,arg2:string,arg3:number):Promise<models.QueryResult>;
 
 export function ExecuteRawDDL(arg1:string,arg2:string):Promise<void>;

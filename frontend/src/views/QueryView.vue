@@ -52,10 +52,13 @@
       <div class="flex-1"></div>
 
       <!-- Query stats -->
-      <div v-if="lastResult" class="flex items-center gap-2 text-xs text-text-muted">
-        <span>{{ lastResult.duration_ms }}ms</span>
-        <span v-if="lastResult.row_count > 0">· {{ lastResult.row_count }} rows</span>
-        <span v-if="lastResult.error" class="text-accent-red">· Error</span>
+      <div v-if="results.length === 1" class="flex items-center gap-2 text-xs text-text-muted">
+        <span>{{ results[0].duration_ms || 0 }}ms</span>
+        <span v-if="results[0].row_count > 0">• {{ results[0].row_count }} rows</span>
+        <span v-if="results[0].error" class="text-accent-red">• Error</span>
+      </div>
+      <div v-else-if="results.length > 1" class="flex items-center gap-2 text-xs text-text-muted">
+        <span>{{ results.length }} results</span>
       </div>
     </div>
 
@@ -140,9 +143,43 @@
       <div class="h-1 bg-navy-border hover:bg-teal-accent cursor-row-resize transition-colors flex-shrink-0"
         @mousedown="startResize"></div>
 
-      <!-- Results -->
-      <div class="border-t border-navy-border overflow-hidden" :style="{ height: resultHeight + 'px' }">
-        <ResultGrid :result="lastResult" :executed-sql="lastExecutedSql" @refresh="runQuery" />
+      <!-- Results Area (Stacked for multiple) -->
+      <div class="flex flex-col border-t border-navy-border overflow-hidden" :style="{ height: resultHeight + 'px' }">
+        <div v-if="results.length > 0" class="flex-1 flex flex-col min-h-0">
+          <!-- Stack each result -->
+          <div 
+            v-for="(res, idx) in results" 
+            :key="idx"
+            class="flex flex-col flex-1 min-h-[100px]"
+            :class="{ 'border-b-4 border-navy-border/50': idx < results.length - 1 }"
+          >
+            <!-- Minimal header for multi-results to show which is which -->
+            <div v-if="results.length > 1" class="px-2 py-1 bg-navy-tertiary border-b border-navy-border flex items-center justify-between flex-shrink-0 z-10">
+              <span class="text-[10px] font-mono text-teal-accent/70 truncate max-w-[80%]">{{ res.raw_sql || `Result ${idx + 1}` }}</span>
+              <div class="flex items-center gap-2 text-[10px] text-text-muted">
+                <span v-if="res.error" class="text-accent-red">Error</span>
+                <span v-else>{{ res.row_count }} rows</span>
+                <span>{{ res.duration_ms }}ms</span>
+              </div>
+            </div>
+            
+            <div class="flex-1 min-h-0 overflow-hidden relative">
+              <ResultGrid 
+                :result="res" 
+                :executed-sql="res.raw_sql || lastExecutedSql" 
+                @refresh="runQuery" 
+              />
+            </div>
+          </div>
+        </div>
+        
+        <div v-else class="h-full flex flex-col items-center justify-center text-text-muted opacity-50">
+          <svg class="w-8 h-8 mb-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <rect x="3" y="3" width="18" height="18" rx="2" />
+            <path d="M3 9h18M3 15h18M9 3v18" />
+          </svg>
+          <p class="text-xs">No result</p>
+        </div>
       </div>
     </div>
 
@@ -177,7 +214,8 @@ const schemaStore = useSchemaStore()
 
 const editorContainer = ref<HTMLElement | null>(null)
 const isExecuting = ref(false)
-const lastResult = ref<QueryResult | null>(null)
+const results = ref<QueryResult[]>([])
+const activeResultIndex = ref(0)
 const lastExecutedSql = ref('')
 
 const showCustomRunModal = ref(false)
@@ -748,19 +786,30 @@ async function runQuery(customSql?: string | MouseEvent) {
   lastExecutedSql.value = sql
 
   isExecuting.value = true
-  lastResult.value = null
+  results.value = []
+  activeResultIndex.value = 0
 
   try {
     const bindings = connectionsStore.getWailsBindings()
-    const result = await bindings.ExecuteQuery(
-      connId,
-      sql,
-      30
-    )
-    lastResult.value = result
+    
+    // Check if there are multiple statements via a simple semicolon check
+    // Ensure we don't count trailing semicolons
+    const trimmedSql = sql.trim()
+    const hasMultipleStatements = trimmedSql.includes(';') && trimmedSql.indexOf(';') < trimmedSql.length - 1
+
+    if (hasMultipleStatements && (bindings as any).ExecuteMultipleQueries) {
+      const resArray = await (bindings as any).ExecuteMultipleQueries(connId, sql, 30)
+      if (resArray && resArray.length > 0) {
+        results.value = resArray
+      }
+    } else {
+      const result = await bindings.ExecuteQuery(connId, sql, 30)
+      results.value = [result]
+    }
 
     // Detect if a table was created and add it to the workspace tree
-    if (result && !result.error) {
+    const firstResult = results.value.length > 0 ? results.value[0] : null
+    if (firstResult && !firstResult.error) {
       const createdTable = detectAndExtractCreatedTable(sql)
       if (createdTable) {
         const conn = connectionsStore.connections.find(c => c.id === connId)
@@ -785,7 +834,7 @@ async function runQuery(customSql?: string | MouseEvent) {
       }
     }
   } catch (e: any) {
-    lastResult.value = {
+    results.value = [{
       columns: [],
       rows: [],
       row_count: 0,
@@ -793,7 +842,7 @@ async function runQuery(customSql?: string | MouseEvent) {
       duration_ms: 0,
       error: e.message || String(e),
       query_type: 'error',
-    }
+    }]
   } finally {
     isExecuting.value = false
   }

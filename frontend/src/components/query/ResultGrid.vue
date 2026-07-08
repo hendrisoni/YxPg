@@ -162,7 +162,7 @@ watch(
       destroyTable()
     }
   },
-  { deep: true }
+  { deep: true, immediate: true }
 )
 
 const closeColVisibilityMenu = (e: MouseEvent) => {

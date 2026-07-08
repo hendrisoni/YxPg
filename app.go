@@ -209,7 +209,12 @@ func (a *App) GetFullSchema(connID string) (map[string]interface{}, error) {
 
 // ExecuteQuery executes a SQL query
 func (a *App) ExecuteQuery(connID, sql string, timeout int) models.QueryResult {
-	return a.executor.ExecuteWithConnection(a.ctx, connID, sql, timeout)
+	return a.executor.Execute(a.ctx, connID, sql, timeout)
+}
+
+// ExecuteMultipleQueries splits and executes multiple SQL statements
+func (a *App) ExecuteMultipleQueries(connID, sql string, timeout int) []models.QueryResult {
+	return a.executor.ExecuteMultiple(a.ctx, connID, sql, timeout)
 }
 
 // CancelQuery cancels an active query
