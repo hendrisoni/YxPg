@@ -1,12 +1,19 @@
 <template>
   <nav class="flex items-center bg-navy-secondary border-b border-navy-border h-9 select-none">
     <!-- Tabs scrollable wrapper -->
-    <div class="flex-1 flex items-center h-full overflow-x-auto no-scrollbar">
+    <div class="flex-1 flex items-center h-full overflow-x-auto no-scrollbar relative">
+      <!-- Active Tab Neon Slider Line -->
+      <div
+        class="absolute top-0 h-[2.5px] bg-teal-accent shadow-[0_0_8px_#00C9A7] z-20 transition-all duration-300 ease-in-out"
+        :style="sliderStyle"
+      ></div>
+
       <!-- Tabs -->
       <div class="flex items-center h-full">
         <div
           v-for="tab in tabsStore.tabs"
           :key="tab.id"
+          :id="`tab-item-${tab.id}`"
           @click="tabsStore.setActiveTab(tab.id)"
           @contextmenu.prevent="showTabContextMenu($event, tab)"
           class="group flex items-center gap-1.5 px-3 h-full border-r border-navy-border cursor-pointer transition-colors relative min-w-0"
@@ -88,7 +95,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { useTabsStore } from '../../stores/tabs'
 import { useUiStore } from '../../stores/ui'
 import type { Tab } from '../../types'
@@ -132,4 +139,52 @@ function handleMenuSelect(action: string) {
   }
   showMenu.value = false
 }
+
+// Neon slider position states and logic
+const sliderStyle = ref({
+  left: '0px',
+  width: '0px',
+  opacity: '0'
+})
+
+function updateSlider() {
+  nextTick(() => {
+    const activeTabId = tabsStore.activeTabId
+    if (!activeTabId) {
+      sliderStyle.value = { left: '0px', width: '0px', opacity: '0' }
+      return
+    }
+
+    const activeEl = document.getElementById(`tab-item-${activeTabId}`)
+    if (activeEl) {
+      const offsetLeft = activeEl.offsetLeft
+      const width = activeEl.offsetWidth
+      sliderStyle.value = {
+        left: `${offsetLeft}px`,
+        width: `${width}px`,
+        opacity: '1'
+      }
+    } else {
+      sliderStyle.value = { left: '0px', width: '0px', opacity: '0' }
+    }
+  })
+}
+
+// Watchers
+watch(() => tabsStore.activeTabId, () => {
+  updateSlider()
+}, { immediate: true })
+
+watch(() => tabsStore.tabs, () => {
+  updateSlider()
+}, { deep: true })
+
+onMounted(() => {
+  updateSlider()
+  window.addEventListener('resize', updateSlider)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', updateSlider)
+})
 </script>

@@ -273,7 +273,7 @@
             <div class="flex items-center justify-between px-3 py-1.5 border-b border-navy-border bg-navy-secondary text-xs font-bold text-text-muted flex-shrink-0">
               <div class="flex items-center gap-1">
                 <button
-                  v-for="t in ['Where', 'Group By', 'Order By']"
+                  v-for="t in ['Where', 'Group By', 'Order By', 'Limit']"
                   :key="t"
                   @click="activeConfigTab = t"
                   class="px-2.5 py-0.5 rounded text-[11px] transition-colors border"
@@ -438,6 +438,31 @@
                   </div>
                 </div>
               </div>
+              
+              <!-- Limit Tab Content -->
+              <div v-show="activeConfigTab === 'Limit'">
+                <div class="flex items-center gap-2 max-w-[240px]">
+                  <span class="text-[10px] uppercase font-bold text-text-muted w-16 text-center">LIMIT</span>
+                  <input
+                    type="number"
+                    v-model="limitValue"
+                    placeholder="No limit"
+                    min="1"
+                    class="bg-navy-tertiary border border-navy-border text-xs text-text-primary rounded px-2 py-0.5 focus:border-teal-accent focus:outline-none flex-1 font-mono text-[11px]"
+                  />
+                  <button
+                    v-if="limitValue !== null && limitValue !== ''"
+                    @click="limitValue = null"
+                    class="text-[10px] text-text-muted hover:text-accent-red cursor-pointer px-1"
+                    title="Clear limit"
+                  >
+                    Clear
+                  </button>
+                </div>
+                <p class="text-[10px] text-text-muted mt-2">
+                  Limit the maximum number of rows returned by the query. Leave empty or click Clear for no limit.
+                </p>
+              </div>
             </div>
           </div>
           
@@ -568,6 +593,7 @@ interface OrderCondition {
 const whereConditions = ref<WhereCondition[]>([])
 const groupByColumns = ref<{ tableAlias: string; columnName: string }[]>([])
 const orderByConditions = ref<OrderCondition[]>([])
+const limitValue = ref<number | string | null>(null)
 
 const allAvailableColumns = computed(() => {
   const list: Array<{ label: string; tableAlias: string; columnName: string; type: string }> = []
@@ -803,6 +829,14 @@ const generatedSQL = computed(() => {
     query += `\nORDER BY ${cols.join(', ')}`
   }
 
+  // Append LIMIT
+  if (limitValue.value !== null && limitValue.value !== undefined && limitValue.value !== '') {
+    const lim = parseInt(limitValue.value.toString())
+    if (!isNaN(lim) && lim > 0) {
+      query += `\nLIMIT ${lim}`
+    }
+  }
+
   return query
 })
 
@@ -979,6 +1013,7 @@ function clearCanvas() {
   whereConditions.value = []
   groupByColumns.value = []
   orderByConditions.value = []
+  limitValue.value = null
   aliasCounter = 0
 }
 

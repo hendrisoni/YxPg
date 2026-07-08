@@ -150,8 +150,13 @@ function startResizeSidebar(e: MouseEvent) {
 }
 
 // Keyboard shortcuts
+const handleToggleSearch = () => {
+  showTableSearch.value = !showTableSearch.value
+}
+
 onMounted(() => {
   connectionsStore.loadConnections()
+  window.addEventListener('toggle-table-search', handleToggleSearch)
   const cleanup = setupKeyboardShortcuts({
     newQueryTab: () => createNewTab(),
     closeTab: () => tabsStore.closeActiveTab(),
@@ -183,7 +188,10 @@ onMounted(() => {
     },
   })
 
-  onUnmounted(cleanup)
+  onUnmounted(() => {
+    cleanup()
+    window.removeEventListener('toggle-table-search', handleToggleSearch)
+  })
 })
 
 function createNewTab() {
