@@ -117,6 +117,7 @@ export interface QueryResult {
   error?: string
   query_type: string
   rows_affected?: number
+  raw_sql?: string
 }
 
 export interface ColumnMeta {

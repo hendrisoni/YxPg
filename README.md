@@ -170,6 +170,18 @@ wails dev
 - Pastikan binary hasil build dan dependency lokal tidak masuk repository.
 - Review koneksi default, screenshot, dan contoh konfigurasi sebelum repository dibuat public.
 
+## Disclaimer
+
+YxPg disediakan apa adanya sebagai alat bantu pengelolaan database PostgreSQL. Pengguna bertanggung jawab penuh atas koneksi, credential, query, perubahan schema, eksekusi DDL/DML, ekspor data, konfigurasi, serta seluruh akibat dari penggunaan software ini.
+
+Developer, maintainer, dan kontributor YxPg tidak bertanggung jawab atas kehilangan data, kebocoran data, kerusakan database, downtime, kesalahan konfigurasi, pelanggaran hukum, pelanggaran kebijakan internal, kerugian bisnis, klaim pihak ketiga, atau akibat langsung maupun tidak langsung lain yang timbul dari penggunaan, modifikasi, distribusi, atau ketidakmampuan menggunakan software ini.
+
+Gunakan software ini hanya pada sistem, database, dan data yang memang Anda miliki atau Anda berwenang untuk akses. Pastikan penggunaan YxPg mematuhi hukum, regulasi, lisensi, kontrak, dan kebijakan keamanan yang berlaku di wilayah serta organisasi Anda.
+
+## Catatan Pengembangan
+
+Proyek ini dibangun dengan pendekatan full vibe coding: eksploratif, iteratif, dan cepat bergerak mengikuti kebutuhan penggunaan nyata. Review kode, pengujian, audit keamanan, dan validasi legal tetap disarankan sebelum digunakan pada lingkungan produksi atau didistribusikan secara publik.
+
 ## Checklist Sebelum Public
 
 - Pastikan `.gitignore` sudah mengecualikan `frontend/node_modules/`, `frontend/dist/`, `build/`, `*.exe`, dan `yxpg.conf`.
@@ -185,4 +197,3 @@ wails build
 ## Lisensi
 
 Proyek ini dilisensikan di bawah [MIT License](LICENSE) - bebas untuk digunakan, dimodifikasi, dan didistribusikan secara gratis.
-

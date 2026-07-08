@@ -72,195 +72,233 @@
           @dragover.prevent
           @drop="handleCanvasDrop"
         >
-          <!-- Grid Background (Visual aesthetic) -->
-          <div class="absolute inset-0 bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:16px_16px] opacity-30"></div>
-
-          <!-- Empty Canvas Message -->
-          <div v-if="tables.length === 0" class="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div class="text-center text-text-muted max-w-sm">
-              <svg class="w-12 h-12 mx-auto mb-3 opacity-40 text-accent-amber" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                <circle cx="12" cy="12" r="3" /><path d="M12 3v6m0 6v6m-9-9h6m6 0h6" />
+          <!-- Zoom Controls (floating in the bottom right corner of canvas) -->
+          <div class="absolute bottom-4 right-4 z-40 flex items-center gap-1 bg-[#0b0f19]/90 backdrop-blur border border-navy-border p-1.5 rounded-md shadow-2xl select-none">
+            <button
+              @click="zoomOut"
+              class="w-6 h-6 rounded hover:bg-navy-hover text-text-secondary hover:text-text-primary flex items-center justify-center font-bold cursor-pointer transition-colors"
+              title="Zoom Out"
+            >
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                <line x1="5" y1="12" x2="19" y2="12" />
               </svg>
-              <p class="text-sm font-semibold text-text-primary mb-1">Visual Query Canvas</p>
-              <p class="text-xs">Drag and drop tables from the sidebar here to start building.</p>
-              <p class="text-[11px] mt-2 text-text-muted/70">Drag column anchors together to form table JOINs.</p>
-            </div>
+            </button>
+            <span class="px-1 text-[10px] text-text-primary font-mono font-bold w-10 text-center">
+              {{ Math.round(zoomScale * 100) }}%
+            </span>
+            <button
+              @click="zoomIn"
+              class="w-6 h-6 rounded hover:bg-navy-hover text-text-secondary hover:text-text-primary flex items-center justify-center font-bold cursor-pointer transition-colors"
+              title="Zoom In"
+            >
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+            </button>
+            <button
+              @click="resetZoom"
+              class="px-1.5 py-0.5 text-[9px] rounded bg-navy-tertiary hover:bg-navy-hover text-text-muted hover:text-text-primary transition-colors cursor-pointer"
+              title="Reset Zoom to 100%"
+            >
+              Reset
+            </button>
           </div>
 
-          <!-- SVG Joins and Connections Rendering Layer -->
-          <svg class="absolute inset-0 pointer-events-none w-full h-full z-10">
-            <!-- Saved Connections -->
-            <g v-for="join in joins" :key="join.id">
-              <template v-if="getJoinAnchors(join)">
-                <path
-                  :d="getBezierPath(
-                    getJoinAnchors(join)!.from.x,
-                    getJoinAnchors(join)!.from.y,
-                    getJoinAnchors(join)!.to.x,
-                    getJoinAnchors(join)!.to.y
-                  )"
-                  fill="none"
-                  stroke="#00c9a7"
-                  stroke-width="2.5"
-                  class="drop-shadow-[0_0_4px_rgba(0,201,167,0.4)]"
-                />
-                <!-- Midpoint Delete Button -->
-                <foreignObject
-                  :x="getMidpoint(getJoinAnchors(join)!.from.x, getJoinAnchors(join)!.to.x) - 10"
-                  :y="getMidpoint(getJoinAnchors(join)!.from.y, getJoinAnchors(join)!.to.y) - 10"
-                  width="20"
-                  height="20"
-                  class="pointer-events-auto"
-                >
-                  <button
-                    @click="removeJoin(join.id)"
-                    class="w-5 h-5 flex items-center justify-center bg-accent-red text-white rounded-full border border-navy-primary shadow hover:scale-110 transition-transform cursor-pointer"
-                    title="Remove JOIN"
-                  >
-                    <svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                      <path d="M18 6 6 18M6 6l12 12" />
-                    </svg>
-                  </button>
-                </foreignObject>
-              </template>
-            </g>
-
-            <!-- Temporary Connection Line when dragging -->
-            <path
-              v-if="dragStartAnchor && dragStartAnchorPos"
-              :d="getBezierPath(
-                dragStartAnchorPos.x,
-                dragStartAnchorPos.y,
-                tempLineEnd.x,
-                tempLineEnd.y
-              )"
-              fill="none"
-              stroke="#fbbf24"
-              stroke-width="2"
-              stroke-dasharray="4"
-              class="drop-shadow-[0_0_3px_rgba(251,191,36,0.5)]"
-            />
-          </svg>
-
-          <!-- Table Schema Nodes -->
+          <!-- Zoom Wrapper (Scales content) -->
           <div
-            v-for="table in tables"
-            :key="table.id"
-            class="absolute select-none bg-[#090d16] border border-[#202e42] rounded-lg shadow-xl z-20 flex flex-col max-h-[300px]"
-            :class="{ 'border-teal-accent': activeTableId === table.id }"
-            :style="{ left: table.x + 'px', top: table.y + 'px', zIndex: table.zIndex, width: (table.width || 260) + 'px' }"
-            @mousedown="focusTable(table.id)"
+            class="absolute inset-0 origin-top-left"
+            :style="{ transform: `scale(${zoomScale})`, width: `${100 / zoomScale}%`, height: `${100 / zoomScale}%` }"
           >
-            <!-- Card Header -->
-            <div
-              class="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#05080f] border-b border-[#182335] cursor-move flex-shrink-0"
-              @mousedown="startDragTable($event, table)"
-            >
-              <svg class="w-3.5 h-3.5 text-accent-green flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18M3 15h18M9 3v18" />
-              </svg>
-              <!-- Select All Checkbox -->
-              <input
-                type="checkbox"
-                :checked="table.columns.every(c => c.selected)"
-                :indeterminate="table.columns.some(c => c.selected) && !table.columns.every(c => c.selected)"
-                @change="toggleSelectAll(table)"
-                @mousedown.stop
-                class="w-3 h-3 rounded border-[#334155] bg-navy-tertiary text-teal-accent focus:ring-0 cursor-pointer flex-shrink-0"
-                title="Select / Deselect All"
-              />
-              <span class="text-xs font-semibold text-text-primary truncate flex-1" :title="`${table.schema}.${table.name}`">
-                {{ table.schema }}.{{ table.name }}
-              </span>
-              <span class="text-[9px] text-[#6b7280] bg-[#111827] px-1 py-0.5 rounded font-mono font-bold scale-90">
-                {{ table.alias }}
-              </span>
+            <!-- Grid Background (Visual aesthetic) -->
+            <div class="absolute inset-0 bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:16px_16px] opacity-30"></div>
 
-              <!-- Collapse Button -->
-              <button
-                @click.stop="table.collapsed = !table.collapsed; recalculatePositions()"
-                class="p-0.5 rounded hover:bg-navy-hover text-text-muted hover:text-text-primary cursor-pointer"
-              >
-                <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <line v-if="!table.collapsed" x1="5" y1="12" x2="19" y2="12" />
-                  <path v-else d="M12 5v14M5 12h14" />
+            <!-- Empty Canvas Message -->
+            <div v-if="tables.length === 0" class="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div class="text-center text-text-muted max-w-sm">
+                <svg class="w-12 h-12 mx-auto mb-3 opacity-40 text-accent-amber" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <circle cx="12" cy="12" r="3" /><path d="M12 3v6m0 6v6m-9-9h6m6 0h6" />
                 </svg>
-              </button>
-
-              <!-- Close Button -->
-              <button
-                @click.stop="removeTable(table.id)"
-                class="p-0.5 rounded hover:bg-navy-hover text-text-muted hover:text-accent-red cursor-pointer"
-              >
-                <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M18 6 6 18M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            <!-- Column List -->
-            <div v-show="!table.collapsed" class="flex-1 overflow-y-auto custom-scrollbar py-1">
-              <div
-                v-for="col in table.columns"
-                :key="col.name"
-                class="relative flex items-center gap-2 pl-6 pr-6 py-1 text-xs hover:bg-[#111927] group"
-                :class="{ 'bg-[#0c1a2e]': isConnectionHover(table.id, col.name) }"
-              >
-                <!-- Left Anchor (incoming connections) -->
-                <div
-                  :id="`anchor-l-${table.id}-${col.name}`"
-                  class="w-2.5 h-2.5 rounded-full border border-[#334155] bg-[#0b0f19] absolute left-1.5 top-1/2 -translate-y-1/2 cursor-crosshair hover:border-teal-accent hover:bg-teal-accent z-30 flex items-center justify-center"
-                  @mousedown.stop.prevent="startConnection($event, table.id, col.name, 'left')"
-                >
-                  <div class="w-1 h-1 rounded-full bg-[#334155] group-hover:bg-teal-accent"></div>
-                </div>
-
-                <!-- Select Checkbox -->
-                <input
-                  type="checkbox"
-                  v-model="col.selected"
-                  class="w-3.5 h-3.5 rounded border-[#202e42] bg-navy-tertiary text-teal-accent focus:ring-0 cursor-pointer"
-                />
-
-                <!-- Primary Key Indicator -->
-                <span v-if="col.isPrimaryKey" class="text-accent-amber text-[10px]" title="Primary Key">🔑</span>
-
-                <!-- Column Name -->
-                <span class="text-text-secondary truncate flex-1 font-mono text-[11px] group-hover:text-text-primary">
-                  {{ col.name }}
-                </span>
-
-                <!-- Data Type Badge -->
-                <span
-                  class="text-[10px] font-bold font-mono w-5 text-right select-none pr-1"
-                  :style="getDataTypeColor(col.type)"
-                  :title="col.type"
-                >
-                  {{ getDataTypeLetter(col.type) }}
-                </span>
-
-                <!-- Right Anchor (outgoing connections) -->
-                <div
-                  :id="`anchor-r-${table.id}-${col.name}`"
-                  class="w-2.5 h-2.5 rounded-full border border-teal-accent bg-[#0b0f19] absolute right-2 top-1/2 -translate-y-1/2 cursor-crosshair hover:bg-teal-accent z-30 flex items-center justify-center"
-                  @mousedown.stop.prevent="startConnection($event, table.id, col.name, 'right')"
-                >
-                  <div class="w-1 h-1 rounded-full bg-teal-accent"></div>
-                </div>
+                <p class="text-sm font-semibold text-text-primary mb-1">Visual Query Canvas</p>
+                <p class="text-xs">Drag and drop tables from the sidebar here to start building.</p>
+                <p class="text-[11px] mt-2 text-text-muted/70">Drag column anchors together to form table JOINs.</p>
               </div>
             </div>
 
-            <!-- Resize Handle -->
+            <!-- SVG Joins and Connections Rendering Layer -->
+            <svg class="absolute inset-0 pointer-events-none w-full h-full z-10">
+              <!-- Saved Connections -->
+              <g v-for="join in joins" :key="join.id">
+                <template v-if="getJoinAnchors(join)">
+                  <path
+                    :d="getBezierPath(
+                      getJoinAnchors(join)!.from.x,
+                      getJoinAnchors(join)!.from.y,
+                      getJoinAnchors(join)!.to.x,
+                      getJoinAnchors(join)!.to.y
+                    )"
+                    fill="none"
+                    stroke="#00c9a7"
+                    stroke-width="2.5"
+                    class="drop-shadow-[0_0_4px_rgba(0,201,167,0.4)]"
+                  />
+                  <!-- Midpoint Delete Button -->
+                  <foreignObject
+                    :x="getMidpoint(getJoinAnchors(join)!.from.x, getJoinAnchors(join)!.to.x) - 10"
+                    :y="getMidpoint(getJoinAnchors(join)!.from.y, getJoinAnchors(join)!.to.y) - 10"
+                    width="20"
+                    height="20"
+                    class="pointer-events-auto"
+                  >
+                    <button
+                      @click="removeJoin(join.id)"
+                      class="w-5 h-5 flex items-center justify-center bg-accent-red text-white rounded-full border border-navy-primary shadow hover:scale-110 transition-transform cursor-pointer"
+                      title="Remove JOIN"
+                    >
+                      <svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                        <path d="M18 6 6 18M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </foreignObject>
+                </template>
+              </g>
+
+              <!-- Temporary Connection Line when dragging -->
+              <path
+                v-if="dragStartAnchor && dragStartAnchorPos"
+                :d="getBezierPath(
+                  dragStartAnchorPos.x,
+                  dragStartAnchorPos.y,
+                  tempLineEnd.x,
+                  tempLineEnd.y
+                )"
+                fill="none"
+                stroke="#fbbf24"
+                stroke-width="2"
+                stroke-dasharray="4"
+                class="drop-shadow-[0_0_3px_rgba(251,191,36,0.5)]"
+              />
+            </svg>
+
+            <!-- Table Schema Nodes -->
             <div
-              v-show="!table.collapsed"
-              class="absolute bottom-0 right-0 w-3.5 h-3.5 cursor-se-resize z-30 flex items-center justify-center text-text-muted hover:text-teal-accent bg-[#05080f] rounded-tl"
-              @mousedown.stop.prevent="startResizeTable($event, table)"
-              title="Drag to resize table width"
+              v-for="table in tables"
+              :key="table.id"
+              class="absolute select-none bg-[#090d16] border border-[#202e42] rounded-lg shadow-xl z-20 flex flex-col max-h-[300px]"
+              :class="{ 'border-teal-accent': activeTableId === table.id }"
+              :style="{ left: table.x + 'px', top: table.y + 'px', zIndex: table.zIndex, width: (table.width || 260) + 'px' }"
+              @mousedown="focusTable(table.id)"
             >
-              <svg class="w-2.5 h-2.5 opacity-60 hover:opacity-100" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                <line x1="17" y1="21" x2="21" y2="17" />
-                <line x1="12" y1="21" x2="21" y2="12" />
-              </svg>
+              <!-- Card Header -->
+              <div
+                class="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#05080f] border-b border-[#182335] cursor-move flex-shrink-0"
+                @mousedown="startDragTable($event, table)"
+              >
+                <svg class="w-3.5 h-3.5 text-accent-green flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18M3 15h18M9 3v18" />
+                </svg>
+                <!-- Select All Checkbox -->
+                <input
+                  type="checkbox"
+                  :checked="table.columns.every(c => c.selected)"
+                  :indeterminate="table.columns.some(c => c.selected) && !table.columns.every(c => c.selected)"
+                  @change="toggleSelectAll(table)"
+                  @mousedown.stop
+                  class="w-3 h-3 rounded border-[#334155] bg-navy-tertiary text-teal-accent focus:ring-0 cursor-pointer flex-shrink-0"
+                  title="Select / Deselect All"
+                />
+                <span class="text-xs font-semibold text-text-primary truncate flex-1" :title="`${table.schema}.${table.name}`">
+                  {{ table.schema }}.{{ table.name }}
+                </span>
+                <span class="text-[9px] text-[#6b7280] bg-[#111827] px-1 py-0.5 rounded font-mono font-bold scale-90">
+                  {{ table.alias }}
+                </span>
+
+                <!-- Collapse Button -->
+                <button
+                  @click.stop="table.collapsed = !table.collapsed; recalculatePositions()"
+                  class="p-0.5 rounded hover:bg-navy-hover text-text-muted hover:text-text-primary cursor-pointer"
+                >
+                  <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line v-if="!table.collapsed" x1="5" y1="12" x2="19" y2="12" />
+                    <path v-else d="M12 5v14M5 12h14" />
+                  </svg>
+                </button>
+
+                <!-- Close Button -->
+                <button
+                  @click.stop="removeTable(table.id)"
+                  class="p-0.5 rounded hover:bg-navy-hover text-text-muted hover:text-accent-red cursor-pointer"
+                >
+                  <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 6 6 18M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <!-- Column List -->
+              <div v-show="!table.collapsed" class="flex-1 overflow-y-auto custom-scrollbar py-1">
+                <div
+                  v-for="col in table.columns"
+                  :key="col.name"
+                  class="relative flex items-center gap-2 pl-6 pr-6 py-1 text-xs hover:bg-[#111927] group"
+                  :class="{ 'bg-[#0c1a2e]': isConnectionHover(table.id, col.name) }"
+                >
+                  <!-- Left Anchor (incoming connections) -->
+                  <div
+                    :id="`anchor-l-${table.id}-${col.name}`"
+                    class="w-2.5 h-2.5 rounded-full border border-[#334155] bg-[#0b0f19] absolute left-1.5 top-1/2 -translate-y-1/2 cursor-crosshair hover:border-teal-accent hover:bg-teal-accent z-30 flex items-center justify-center"
+                    @mousedown.stop.prevent="startConnection($event, table.id, col.name, 'left')"
+                  >
+                    <div class="w-1 h-1 rounded-full bg-[#334155] group-hover:bg-teal-accent"></div>
+                  </div>
+
+                  <!-- Select Checkbox -->
+                  <input
+                    type="checkbox"
+                    v-model="col.selected"
+                    class="w-3.5 h-3.5 rounded border-[#202e42] bg-navy-tertiary text-teal-accent focus:ring-0 cursor-pointer"
+                  />
+
+                  <!-- Primary Key Indicator -->
+                  <span v-if="col.isPrimaryKey" class="text-accent-amber text-[10px]" title="Primary Key">🔑</span>
+
+                  <!-- Column Name -->
+                  <span class="text-text-secondary truncate flex-1 font-mono text-[11px] group-hover:text-text-primary">
+                    {{ col.name }}
+                  </span>
+
+                  <!-- Data Type Badge -->
+                  <span
+                    class="text-[10px] font-bold font-mono w-5 text-right select-none pr-1"
+                    :style="getDataTypeColor(col.type)"
+                    :title="col.type"
+                  >
+                    {{ getDataTypeLetter(col.type) }}
+                  </span>
+
+                  <!-- Right Anchor (outgoing connections) -->
+                  <div
+                    :id="`anchor-r-${table.id}-${col.name}`"
+                    class="w-2.5 h-2.5 rounded-full border border-teal-accent bg-[#0b0f19] absolute right-2 top-1/2 -translate-y-1/2 cursor-crosshair hover:bg-teal-accent z-30 flex items-center justify-center"
+                    @mousedown.stop.prevent="startConnection($event, table.id, col.name, 'right')"
+                  >
+                    <div class="w-1 h-1 rounded-full bg-teal-accent"></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Resize Handle -->
+              <div
+                v-show="!table.collapsed"
+                class="absolute bottom-0 right-0 w-3.5 h-3.5 cursor-se-resize z-30 flex items-center justify-center text-text-muted hover:text-teal-accent bg-[#05080f] rounded-tl"
+                @mousedown.stop.prevent="startResizeTable($event, table)"
+                title="Drag to resize table width"
+              >
+                <svg class="w-2.5 h-2.5 opacity-60 hover:opacity-100" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <line x1="17" y1="21" x2="21" y2="17" />
+                  <line x1="12" y1="21" x2="21" y2="12" />
+                </svg>
+              </div>
             </div>
           </div>
         </div>
@@ -540,6 +578,24 @@ const currentConnectionName = computed(() => {
 const currentTab = ref('Builder')
 const isRunning = ref(false)
 const queryResult = ref<QueryResult | null>(null)
+
+// Zoom scale state and methods
+const zoomScale = ref(1.0)
+
+function zoomIn() {
+  zoomScale.value = Math.min(2.0, zoomScale.value + 0.1)
+  recalculatePositions()
+}
+
+function zoomOut() {
+  zoomScale.value = Math.max(0.5, zoomScale.value - 0.1)
+  recalculatePositions()
+}
+
+function resetZoom() {
+  zoomScale.value = 1.0
+  recalculatePositions()
+}
 
 // Tables and Joins layout state
 interface CanvasTable {
@@ -880,8 +936,8 @@ async function handleCanvasDrop(e: DragEvent) {
     let dropY = 100
     if (canvas) {
       const rect = canvas.getBoundingClientRect()
-      dropX = Math.max(10, e.clientX - rect.left - 120)
-      dropY = Math.max(10, e.clientY - rect.top - 20)
+      dropX = Math.max(10, (e.clientX - rect.left) / zoomScale.value - 120)
+      dropY = Math.max(10, (e.clientY - rect.top) / zoomScale.value - 20)
     }
 
     aliasCounter++
@@ -934,8 +990,8 @@ function startDragTable(e: MouseEvent, table: CanvasTable) {
   focusTable(table.id)
   draggingTable.value = table
   dragOffset = {
-    x: e.clientX - table.x,
-    y: e.clientY - table.y
+    x: e.clientX - table.x * zoomScale.value,
+    y: e.clientY - table.y * zoomScale.value
   }
   window.addEventListener('mousemove', dragTable)
   window.addEventListener('mouseup', endDragTable)
@@ -947,11 +1003,11 @@ function dragTable(e: MouseEvent) {
   if (!canvas) return
   const rect = canvas.getBoundingClientRect()
 
-  let newX = e.clientX - dragOffset.x
-  let newY = e.clientY - dragOffset.y
+  let newX = (e.clientX - dragOffset.x) / zoomScale.value
+  let newY = (e.clientY - dragOffset.y) / zoomScale.value
 
-  draggingTable.value.x = Math.max(10, Math.min(rect.width - 250, newX))
-  draggingTable.value.y = Math.max(10, Math.min(rect.height - 50, newY))
+  draggingTable.value.x = Math.max(10, Math.min((rect.width / zoomScale.value) - 250, newX))
+  draggingTable.value.y = Math.max(10, Math.min((rect.height / zoomScale.value) - 50, newY))
 
   recalculatePositions()
 }
@@ -977,7 +1033,7 @@ function startResizeTable(e: MouseEvent, table: CanvasTable) {
 
 function resizeTable(e: MouseEvent) {
   if (!resizingTable.value) return
-  const deltaX = e.clientX - resizeStartMouseX
+  const deltaX = (e.clientX - resizeStartMouseX) / zoomScale.value
   const newWidth = Math.max(200, Math.min(600, resizeStartWidth + deltaX))
   resizingTable.value.width = newWidth
   recalculatePositions()
@@ -1035,8 +1091,8 @@ function startConnection(e: MouseEvent, tableId: string, columnName: string, sid
   if (!canvas) return
   const rect = canvas.getBoundingClientRect()
   tempLineEnd.value = {
-    x: e.clientX - rect.left,
-    y: e.clientY - rect.top
+    x: (e.clientX - rect.left) / zoomScale.value,
+    y: (e.clientY - rect.top) / zoomScale.value
   }
 
   window.addEventListener('mousemove', dragConnection)
@@ -1047,8 +1103,8 @@ function dragConnection(e: MouseEvent) {
   const canvas = canvasRef.value
   if (!canvas) return
   const rect = canvas.getBoundingClientRect()
-  const mx = e.clientX - rect.left
-  const my = e.clientY - rect.top
+  const mx = (e.clientX - rect.left) / zoomScale.value
+  const my = (e.clientY - rect.top) / zoomScale.value
   tempLineEnd.value = { x: mx, y: my }
 
   // Find nearest anchor for hover highlight
@@ -1155,8 +1211,8 @@ function recalculatePositions() {
             if (el) {
               const rect = el.getBoundingClientRect()
               newPositions[`${table.id}:${col.name}:${side}`] = {
-                x: rect.left - canvasRect.left + rect.width / 2,
-                y: rect.top - canvasRect.top + rect.height / 2
+                x: (rect.left - canvasRect.left + rect.width / 2) / zoomScale.value,
+                y: (rect.top - canvasRect.top + rect.height / 2) / zoomScale.value
               }
             }
           }
@@ -1223,7 +1279,7 @@ function openInQuery() {
   if (generatedSQL.value) {
     tabsStore.createTab('query', {
       sql: generatedSQL.value,
-      connectionId: props.tab.connectionId || connectionsStore.currentConnectionId
+      connectionId: props.tab.connectionId || connectionsStore.currentConnectionId || undefined
     })
     uiStore.addNotification({
       type: 'info',
