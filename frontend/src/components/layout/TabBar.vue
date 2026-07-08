@@ -1,10 +1,10 @@
 <template>
-  <nav class="flex items-center bg-navy-secondary border-b border-navy-border h-9 select-none">
-    <!-- Tabs scrollable wrapper -->
-    <div class="flex-1 flex items-center h-full overflow-x-auto no-scrollbar relative">
+  <nav class="flex items-start bg-navy-secondary border-b border-navy-border min-h-9 h-auto select-none">
+    <!-- Tabs wrap wrapper -->
+    <div class="flex-1 flex flex-wrap items-center relative">
       <!-- Active Tab Neon Slider Line -->
       <div
-        class="absolute top-0 h-[3px] bg-teal-accent shadow-[0_0_12px_#00C9A7,0_0_4px_#00C9A7] z-20 transition-all duration-300 ease-in-out"
+        class="absolute h-[3px] bg-teal-accent shadow-[0_0_12px_#00C9A7,0_0_4px_#00C9A7] z-20 transition-all duration-300 ease-in-out"
         :style="sliderStyle"
       >
         <!-- Soft gradient glow cast below the indicator -->
@@ -12,14 +12,14 @@
       </div>
 
       <!-- Tabs -->
-      <div class="flex items-center h-full">
+      <div class="flex flex-wrap items-center">
         <div
           v-for="tab in tabsStore.tabs"
           :key="tab.id"
           :id="`tab-item-${tab.id}`"
           @click="tabsStore.setActiveTab(tab.id)"
           @contextmenu.prevent="showTabContextMenu($event, tab)"
-          class="group flex items-center gap-1.5 px-3 h-full border-r border-navy-border cursor-pointer transition-all relative min-w-0"
+          class="group flex items-center gap-1.5 px-3 h-[35px] border-r border-b border-navy-border cursor-pointer transition-all relative min-w-0"
           :class="[
             tab.id === tabsStore.activeTabId
               ? 'bg-navy-primary text-text-primary font-medium'
@@ -69,7 +69,7 @@
       <!-- New Tab Button -->
       <button
         @click="$emit('newTab')"
-        class="flex items-center justify-center w-9 h-full text-text-muted hover:text-text-primary hover:bg-navy-hover transition-colors border-r border-navy-border flex-shrink-0"
+        class="flex items-center justify-center w-9 h-[35px] text-text-muted hover:text-text-primary hover:bg-navy-hover transition-colors border-r border-b border-navy-border flex-shrink-0"
         title="New Tab (Ctrl+T)"
       >
         <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -81,7 +81,7 @@
     <!-- Query Builder static action button on the right -->
     <button
       @click="$emit('openBuilder')"
-      class="flex items-center gap-1.5 px-3 h-full text-xs text-text-secondary hover:text-text-primary hover:bg-navy-hover transition-colors border-l border-navy-border flex-shrink-0"
+      class="flex items-center gap-1.5 px-3 h-[35px] text-xs text-text-secondary hover:text-text-primary hover:bg-navy-hover transition-colors border-l border-b border-navy-border flex-shrink-0"
       title="Open Query Builder"
     >
       <svg class="w-3.5 h-3.5 text-accent-amber" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -151,6 +151,7 @@ function handleMenuSelect(action: string) {
 // Neon slider position states and logic
 const sliderStyle = ref({
   left: '0px',
+  top: '0px',
   width: '0px',
   opacity: '0'
 })
@@ -159,21 +160,23 @@ function updateSlider() {
   nextTick(() => {
     const activeTabId = tabsStore.activeTabId
     if (!activeTabId) {
-      sliderStyle.value = { left: '0px', width: '0px', opacity: '0' }
+      sliderStyle.value = { left: '0px', top: '0px', width: '0px', opacity: '0' }
       return
     }
 
     const activeEl = document.getElementById(`tab-item-${activeTabId}`)
     if (activeEl) {
       const offsetLeft = activeEl.offsetLeft
+      const offsetTop = activeEl.offsetTop
       const width = activeEl.offsetWidth
       sliderStyle.value = {
         left: `${offsetLeft}px`,
+        top: `${offsetTop}px`,
         width: `${width}px`,
         opacity: '1'
       }
     } else {
-      sliderStyle.value = { left: '0px', width: '0px', opacity: '0' }
+      sliderStyle.value = { left: '0px', top: '0px', width: '0px', opacity: '0' }
     }
   })
 }
