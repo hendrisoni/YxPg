@@ -18,7 +18,7 @@
         </button>
 
         <!-- Add Category Button -->
-        <button @click="handleAddCategory"
+        <button @click="$emit('addCategory')"
           class="p-2 rounded-lg text-text-secondary hover:text-teal-accent hover:bg-navy-hover transition-colors cursor-pointer"
           title="Add Category">
           <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -125,7 +125,7 @@
           </svg>
           <p class="text-xs text-text-muted mt-2">Workspace is empty</p>
           <p class="text-[10px] text-text-muted mt-1">Press Ctrl+K to search and add tables</p>
-          <button @click="handleAddCategory"
+          <button @click="$emit('addCategory')"
             class="mt-3 px-3 py-1.5 text-xs bg-teal-accent text-navy-primary rounded-md font-medium hover:bg-teal-hover transition-colors">
             Add Category
           </button>
@@ -144,7 +144,7 @@ import { useUiStore } from '../../stores/ui'
 import type { TreeNode } from '../../types'
 import SchemaTreeNode from '../schema/SchemaTreeNode.vue'
 
-const emit = defineEmits(['toggle', 'newConnection', 'searchTable', 'openSettings', 'openWorkspace', 'openBackup'])
+const emit = defineEmits(['toggle', 'newConnection', 'searchTable', 'openSettings', 'openWorkspace', 'openBackup', 'addCategory'])
 
 const connectionsStore = useConnectionsStore()
 const workspaceStore = useWorkspaceStore()
@@ -179,13 +179,6 @@ function filterTreeNodes(nodes: TreeNode[], query: string): TreeNode[] {
     }
     return acc
   }, [])
-}
-
-async function handleAddCategory() {
-  const name = prompt('Enter category name:')
-  if (name && name.trim()) {
-    await workspaceStore.addCategory(name.trim())
-  }
 }
 
 function handleRootDrop(event: DragEvent) {
