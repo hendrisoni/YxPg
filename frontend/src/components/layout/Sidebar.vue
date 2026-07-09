@@ -38,6 +38,17 @@
           </svg>
         </button>
 
+        <!-- Referential Integrity Button -->
+        <button @click="$emit('openReferential')"
+          class="p-2 rounded-lg text-text-secondary hover:text-teal-accent hover:bg-navy-hover transition-colors cursor-pointer"
+          title="Referential Integrity Relation">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="6" height="6" rx="1" />
+            <rect x="15" y="15" width="6" height="6" rx="1" />
+            <path d="M9 6h3a2 2 0 0 1 2 2v4a2 2 0 0 0 2 2h1" />
+          </svg>
+        </button>
+
 
       </div>
 
@@ -190,7 +201,7 @@ import type { TreeNode } from '../../types'
 import SchemaTreeNode from '../schema/SchemaTreeNode.vue'
 import Modal from '../shared/Modal.vue'
 
-const emit = defineEmits(['toggle', 'newConnection', 'searchTable', 'openSettings', 'openWorkspace', 'openBackup', 'addCategory'])
+const emit = defineEmits(['toggle', 'newConnection', 'searchTable', 'openSettings', 'openWorkspace', 'openBackup', 'addCategory', 'openReferential'])
 
 const connectionsStore = useConnectionsStore()
 const workspaceStore = useWorkspaceStore()

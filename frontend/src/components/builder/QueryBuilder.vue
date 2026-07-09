@@ -71,6 +71,7 @@
           class="flex-1 relative bg-navy-primary overflow-hidden cursor-default"
           @dragover.prevent
           @drop="handleCanvasDrop"
+          @wheel="handleCanvasWheel"
         >
           <!-- Zoom Controls (floating in the bottom right corner of canvas) -->
           <div class="absolute bottom-4 right-4 z-40 flex items-center gap-1 bg-[#0b0f19]/90 backdrop-blur border border-navy-border p-1.5 rounded-md shadow-2xl select-none">
@@ -595,6 +596,23 @@ function zoomOut() {
 function resetZoom() {
   zoomScale.value = 1.0
   recalculatePositions()
+}
+
+function handleCanvasWheel(e: WheelEvent) {
+  if (e.ctrlKey) {
+    e.preventDefault()
+    if (e.deltaY < 0) {
+      zoomIn()
+    } else {
+      zoomOut()
+    }
+  }
+}
+
+function preventGlobalZoom(e: WheelEvent) {
+  if (e.ctrlKey) {
+    e.preventDefault()
+  }
 }
 
 // Tables and Joins layout state
@@ -1365,10 +1383,12 @@ onMounted(() => {
     recalculatePositions()
   })
   window.addEventListener('resize', recalculatePositions)
+  window.addEventListener('wheel', preventGlobalZoom, { passive: false })
 })
 
 onUnmounted(() => {
   window.removeEventListener('resize', recalculatePositions)
+  window.removeEventListener('wheel', preventGlobalZoom)
 })
 </script>
 

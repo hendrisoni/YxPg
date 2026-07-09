@@ -12,6 +12,7 @@
         @open-workspace="showWorkspaceModal = true"
         @open-backup="handleOpenBackup"
         @add-category="handleAddCategory"
+        @open-referential="handleOpenReferential"
       />
 
       <!-- Resize Handle -->
@@ -56,6 +57,11 @@
             v-else-if="tabsStore.activeTab.type === 'backup'"
             :tab="tabsStore.activeTab"
             :key="'backup-' + tabsStore.activeTab.id"
+          />
+          <ReferentialView
+            v-else-if="tabsStore.activeTab.type === 'referential'"
+            :tab="tabsStore.activeTab"
+            :key="'referential-' + tabsStore.activeTab.id"
           />
         </div>
       </div>
@@ -134,6 +140,7 @@ import BuilderView from './BuilderView.vue'
 import DDLView from './DDLView.vue'
 import QueryLogView from './QueryLogView.vue'
 import BackupView from './BackupView.vue'
+import ReferentialView from './ReferentialView.vue'
 import { useWorkspaceStore } from '../stores/workspace'
 
 const connectionsStore = useConnectionsStore()
@@ -244,6 +251,10 @@ function handleOpenBackup() {
 
 function handleAddCategory() {
   showCategoryModal.value = true
+}
+
+function handleOpenReferential() {
+  tabsStore.createTab('referential', { title: 'Referential Integrity' })
 }
 
 async function handleSaveConnection(conn: Connection) {
