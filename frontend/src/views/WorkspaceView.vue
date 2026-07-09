@@ -11,6 +11,7 @@
         @open-settings="showSettings = true"
         @open-workspace="showWorkspaceModal = true"
         @open-backup="handleOpenBackup"
+        @add-category="handleAddCategory"
       />
 
       <!-- Resize Handle -->
@@ -98,6 +99,11 @@
       v-if="showWorkspaceModal"
       @close="showWorkspaceModal = false"
     />
+    <!-- Category Modal -->
+    <CategoryModal
+      v-if="showCategoryModal"
+      @close="showCategoryModal = false"
+    />
   </div>
 </template>
 
@@ -120,6 +126,7 @@ import ConnectionForm from '../components/connection/ConnectionForm.vue'
 import TableSearchPalette from '../components/shared/TableSearchPalette.vue'
 import SettingsModal from '../components/shared/SettingsModal.vue'
 import WorkspaceModal from '../components/shared/WorkspaceModal.vue'
+import CategoryModal from '../components/shared/CategoryModal.vue'
 import HomeView from './HomeView.vue'
 import QueryView from './QueryView.vue'
 import TableView from './TableView.vue'
@@ -127,16 +134,19 @@ import BuilderView from './BuilderView.vue'
 import DDLView from './DDLView.vue'
 import QueryLogView from './QueryLogView.vue'
 import BackupView from './BackupView.vue'
+import { useWorkspaceStore } from '../stores/workspace'
 
 const connectionsStore = useConnectionsStore()
 const schemaStore = useSchemaStore()
 const tabsStore = useTabsStore()
 const uiStore = useUiStore()
+const workspaceStore = useWorkspaceStore()
 
 const showNewConnection = ref(false)
 const showTableSearch = ref(false)
 const showSettings = ref(false)
 const showWorkspaceModal = ref(false)
+const showCategoryModal = ref(false)
 const statusBar = ref<InstanceType<typeof StatusBar> | null>(null)
 
 function startResizeSidebar(e: MouseEvent) {
@@ -230,6 +240,10 @@ function openQueryBuilder() {
 
 function handleOpenBackup() {
   tabsStore.createTab('backup', { title: 'Backup' })
+}
+
+function handleAddCategory() {
+  showCategoryModal.value = true
 }
 
 async function handleSaveConnection(conn: Connection) {
