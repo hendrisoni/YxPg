@@ -31,7 +31,20 @@ export const useTabsStore = defineStore('tabs', () => {
   watch(
     tabs,
     (newTabs) => {
-      localStorage.setItem('tabs:open_tabs', JSON.stringify(newTabs))
+      const tabsToSave = newTabs.map(tab => {
+        if (tab.data) {
+          if (tab.type === 'query') {
+            const { results, ...otherData } = tab.data
+            return { ...tab, data: otherData }
+          }
+          if (tab.type === 'builder') {
+            const { queryResult, ...otherData } = tab.data
+            return { ...tab, data: otherData }
+          }
+        }
+        return tab
+      })
+      localStorage.setItem('tabs:open_tabs', JSON.stringify(tabsToSave))
     },
     { deep: true }
   )

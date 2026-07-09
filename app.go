@@ -504,6 +504,10 @@ func (a *App) saveConfigValue(key, value string) error {
 			}
 			lines = append(lines, line)
 		}
+		if err := scanner.Err(); err != nil {
+			file.Close()
+			return fmt.Errorf("failed to scan configuration file: %w", err)
+		}
 		file.Close()
 	}
 
@@ -639,6 +643,10 @@ default_database=postgres
 		key := strings.TrimSpace(parts[0])
 		val := strings.TrimSpace(parts[1])
 		config[key] = val
+	}
+
+	if err := scanner.Err(); err != nil {
+		fmt.Printf("[Config] Error scanning config file: %v\n", err)
 	}
 
 	return config

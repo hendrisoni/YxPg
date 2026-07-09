@@ -183,7 +183,7 @@
             <div
               v-for="table in tables"
               :key="table.id"
-              class="absolute select-none bg-[#090d16] border border-[#202e42] rounded-lg shadow-xl z-20 flex flex-col max-h-[300px]"
+              class="absolute select-none bg-[#090d16] border border-[#202e42] rounded-lg shadow-xl z-20 flex flex-col max-h-[300px] overflow-hidden"
               :class="{ 'border-teal-accent': activeTableId === table.id }"
               :style="{ left: table.x + 'px', top: table.y + 'px', zIndex: table.zIndex, width: (table.width || 260) + 'px' }"
               @mousedown="focusTable(table.id)"
@@ -1315,13 +1315,55 @@ async function runQuery() {
   }
 }
 
-// Watchers for reactive layout positions
-watch(() => tables.value, () => {
-  recalculatePositions()
-}, { deep: true })
+// Function to save canvas state into the active tab
+function saveBuilderState() {
+  tabsStore.updateTab(props.tab.id, {
+    data: {
+      tables: tables.value,
+      joins: joins.value,
+      whereConditions: whereConditions.value,
+      groupByColumns: groupByColumns.value,
+      orderByConditions: orderByConditions.value,
+      limitValue: limitValue.value,
+      zoomScale: zoomScale.value,
+      aliasCounter: aliasCounter,
+      maxZIndex: maxZIndex,
+      queryResult: queryResult.value,
+      currentTab: currentTab.value
+    }
+  })
+}
+
+// Watchers for reactive layout positions and saving state
+watch(
+  [tables, joins, whereConditions, groupByColumns, orderByConditions, limitValue, zoomScale, queryResult, currentTab],
+  () => {
+    recalculatePositions()
+    saveBuilderState()
+  },
+  { deep: true }
+)
 
 onMounted(() => {
-  recalculatePositions()
+  // Load state from tab.data if available
+  if (props.tab.data) {
+    if (props.tab.data.tables) tables.value = props.tab.data.tables
+    if (props.tab.data.joins) joins.value = props.tab.data.joins
+    if (props.tab.data.whereConditions) whereConditions.value = props.tab.data.whereConditions
+    if (props.tab.data.groupByColumns) groupByColumns.value = props.tab.data.groupByColumns
+    if (props.tab.data.orderByConditions) orderByConditions.value = props.tab.data.orderByConditions
+    if (props.tab.data.limitValue !== undefined) limitValue.value = props.tab.data.limitValue
+    if (props.tab.data.zoomScale) zoomScale.value = props.tab.data.zoomScale
+    if (props.tab.data.aliasCounter !== undefined) aliasCounter = props.tab.data.aliasCounter
+    if (props.tab.data.maxZIndex !== undefined) maxZIndex = props.tab.data.maxZIndex
+    if (props.tab.data.queryResult) queryResult.value = props.tab.data.queryResult
+    if (props.tab.data.currentTab) currentTab.value = props.tab.data.currentTab
+  }
+
+  // Recalculate on mount
+  nextTick(() => {
+    recalculatePositions()
+  })
   window.addEventListener('resize', recalculatePositions)
 })
 

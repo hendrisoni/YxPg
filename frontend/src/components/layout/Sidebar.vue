@@ -132,17 +132,63 @@
         </div>
       </div>
     </div>
+
+    <!-- Category Add/Rename Modal -->
+    <Modal
+      :show="isCategoryModalOpen"
+      :title="categoryModalTitle"
+      @close="isCategoryModalOpen = false"
+      size="sm"
+    >
+      <div class="space-y-4 py-2 select-none">
+        <div class="flex flex-col gap-1.5">
+          <label for="category-name" class="text-xs font-semibold text-text-primary">
+            Category Name
+          </label>
+          <input
+            ref="categoryInputRef"
+            v-model="categoryModalInput"
+            id="category-name"
+            type="text"
+            placeholder="e.g. Production Databases"
+            class="w-full text-xs bg-navy-tertiary border border-navy-border rounded-md px-2.5 py-1.5 text-text-primary focus:border-teal-accent focus:outline-none placeholder-text-muted"
+            required
+            @keydown.enter="handleCategorySubmit"
+          />
+          <p v-if="categoryModalError" class="text-[10px] text-red-500">
+            {{ categoryModalError }}
+          </p>
+        </div>
+      </div>
+      <template #footer>
+        <button
+          type="button"
+          @click="isCategoryModalOpen = false"
+          class="px-4 py-1.5 text-xs text-text-secondary hover:text-text-primary transition-colors cursor-pointer"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          @click="handleCategorySubmit"
+          class="px-4 py-1.5 text-xs bg-teal-accent text-navy-primary rounded-md font-medium hover:bg-teal-hover transition-colors cursor-pointer"
+        >
+          {{ categoryModalMode === 'add' ? 'Add' : 'Rename' }}
+        </button>
+      </template>
+    </Modal>
   </aside>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import { useConnectionsStore } from '../../stores/connections'
 import { useWorkspaceStore } from '../../stores/workspace'
 import { useTabsStore } from '../../stores/tabs'
 import { useUiStore } from '../../stores/ui'
 import type { TreeNode } from '../../types'
 import SchemaTreeNode from '../schema/SchemaTreeNode.vue'
+import Modal from '../shared/Modal.vue'
 
 const emit = defineEmits(['toggle', 'newConnection', 'searchTable', 'openSettings', 'openWorkspace', 'openBackup'])
 
@@ -181,11 +227,33 @@ function filterTreeNodes(nodes: TreeNode[], query: string): TreeNode[] {
   }, [])
 }
 
-async function handleAddCategory() {
-  const name = prompt('Enter category name:')
-  if (name && name.trim()) {
-    await workspaceStore.addCategory(name.trim())
+const isCategoryModalOpen = ref(false)
+const categoryModalMode = ref<'add' | 'rename'>('add')
+const categoryModalInput = ref('')
+const categoryModalNodeId = ref('')
+const categoryModalError = ref('')
+
+const categoryModalTitle = computed(() => {
+  return categoryModalMode.value === 'add' ? 'Add Category' : 'Rename Category'
+})
+
+const categoryInputRef = ref<HTMLInputElement | null>(null)
+
+watch(isCategoryModalOpen, (isOpen) => {
+  if (isOpen) {
+    categoryModalError.value = ''
+    nextTick(() => {
+      categoryInputRef.value?.focus()
+      categoryInputRef.value?.select()
+    })
   }
+})
+
+function handleAddCategory() {
+  categoryModalMode.value = 'add'
+  categoryModalInput.value = ''
+  categoryModalNodeId.value = ''
+  isCategoryModalOpen.value = true
 }
 
 function handleRootDrop(event: DragEvent) {
@@ -202,10 +270,26 @@ function handleDeleteNode(id: string) {
 }
 
 function handleRenameNode(id: string, currentLabel: string) {
-  const name = prompt('Rename category:', currentLabel)
-  if (name && name.trim() && name.trim() !== currentLabel) {
-    workspaceStore.renameNode(id, name.trim())
+  categoryModalMode.value = 'rename'
+  categoryModalInput.value = currentLabel
+  categoryModalNodeId.value = id
+  isCategoryModalOpen.value = true
+}
+
+async function handleCategorySubmit() {
+  const name = categoryModalInput.value.trim()
+  if (!name) {
+    categoryModalError.value = 'Category name cannot be empty'
+    return
   }
+
+  if (categoryModalMode.value === 'add') {
+    await workspaceStore.addCategory(name)
+  } else {
+    await workspaceStore.renameNode(categoryModalNodeId.value, name)
+  }
+
+  isCategoryModalOpen.value = false
 }
 
 function setAllNodesExpandedState(nodes: any[], state: boolean) {

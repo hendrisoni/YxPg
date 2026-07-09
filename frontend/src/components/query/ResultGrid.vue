@@ -60,28 +60,40 @@
             </svg>
           </button>
 
-          <!-- Column Visibility Dropdown -->
-          <div class="relative flex-shrink-0" ref="colVisibilityRef">
-            <button @click.stop="toggleColVisibilityMenu" class="p-1 rounded hover:bg-navy-hover transition-colors" :class="showColVisibilityMenu ? 'text-teal-accent bg-teal-accent/10' : 'text-text-muted hover:text-text-primary'" title="Columns Visibility">
-              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="3" y="3" width="18" height="18" rx="2" /><path d="M9 3v18" />
+          <!-- Freeze Columns Dropdown -->
+          <div class="relative flex-shrink-0" ref="freezeRef">
+            <button @click.stop="toggleFreezeMenu" class="p-1 rounded hover:bg-navy-hover transition-colors flex items-center justify-center" :class="showFreezeMenu ? 'text-teal-accent bg-teal-accent/10' : 'text-text-muted hover:text-text-primary'" title="Freeze Columns">
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="17" x2="12" y2="22" />
+                <path d="M5 17h14v-1.76a2 2 0 0 0-.44-1.24l-2.78-3.48A2 2 0 0 1 15 9.28V5a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v4.28a2 2 0 0 1-.78 1.24l-2.78 3.48a2 2 0 0 0-.44 1.24V17z" />
               </svg>
             </button>
-            <div v-if="showColVisibilityMenu" class="absolute bottom-8 left-0 z-50 w-48 p-2.5 rounded-lg shadow-xl bg-navy-secondary border border-navy-border flex flex-col gap-1.5">
-              <div class="text-[10px] font-bold text-text-muted uppercase tracking-wider px-1 py-0.5 flex justify-between items-center">
-                <span>Show Columns</span>
-                <div class="flex gap-2">
-                  <button @click.stop="setAllColsVisible(true)" class="text-[10px] text-teal-accent hover:underline">All</button>
-                  <span class="text-navy-border">|</span>
-                  <button @click.stop="setAllColsVisible(false)" class="text-[10px] text-accent-red hover:underline">None</button>
-                </div>
+            <div v-if="showFreezeMenu" class="absolute bottom-8 left-0 z-50 w-48 p-2.5 rounded-lg shadow-xl bg-navy-secondary border border-navy-border flex flex-col gap-1.5 animate-fade-in select-none">
+              <div class="text-[10px] font-bold text-text-muted uppercase tracking-wider px-1 py-0.5">
+                <span>Freeze Columns</span>
               </div>
               <div class="h-px bg-navy-border my-0.5"></div>
-              <div class="flex flex-col gap-1 max-h-48 overflow-y-auto pr-1">
-                <label v-for="col in activeColumns" :key="col.field" class="flex items-center gap-2 px-2 py-1 rounded hover:bg-navy-hover cursor-pointer select-none text-xs text-text-primary">
-                  <input type="checkbox" :checked="col.visible" @change="toggleColumnVisibility(col.field)" class="rounded border-navy-border bg-navy-tertiary text-teal-accent focus:ring-teal-accent w-3.5 h-3.5" />
-                  <span class="truncate">{{ col.title }}</span>
-                </label>
+              <div v-if="freezeableColumns.length > 0" class="flex flex-col gap-1 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
+                <button
+                  v-for="col in freezeableColumns"
+                  :key="col.field"
+                  @click.stop="toggleFreezeColumn(col.field)"
+                  class="flex items-center justify-between px-2 py-1.5 rounded hover:bg-navy-hover cursor-pointer text-xs transition-colors w-full text-left"
+                  :class="col.frozen ? 'text-teal-accent font-medium' : 'text-text-primary'"
+                >
+                  <span class="truncate flex-1 text-left">{{ col.title }}</span>
+                  <svg v-if="col.frozen" class="w-3 h-3 text-teal-accent flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="17" x2="12" y2="22" />
+                    <path d="M5 17h14v-1.76a2 2 0 0 0-.44-1.24l-2.78-3.48A2 2 0 0 1 15 9.28V5a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v4.28a2 2 0 0 1-.78 1.24l-2.78 3.48a2 2 0 0 0-.44 1.24V17z" />
+                  </svg>
+                  <svg v-else class="w-3 h-3 text-text-muted opacity-40 hover:opacity-100 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="17" x2="12" y2="22" />
+                    <path d="M5 17h14v-1.76a2 2 0 0 0-.44-1.24l-2.78-3.48A2 2 0 0 1 15 9.28V5a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v4.28a2 2 0 0 1-.78 1.24l-2.78 3.48a2 2 0 0 0-.44 1.24V17z" />
+                  </svg>
+                </button>
+              </div>
+              <div v-else class="text-[10px] text-text-muted text-center py-2">
+                No columns to freeze
               </div>
             </div>
           </div>
@@ -147,9 +159,9 @@ const tableContainer = ref<HTMLElement | null>(null)
 let table: any = null
 
 const showFilters = ref(false)
-const showColVisibilityMenu = ref(false)
-const colVisibilityRef = ref<HTMLElement | null>(null)
-const activeColumns = ref<{ field: string; title: string; visible: boolean }[]>([])
+const showFreezeMenu = ref(false)
+const freezeRef = ref<HTMLElement | null>(null)
+const freezeableColumns = ref<{ field: string; title: string; frozen: boolean }[]>([])
 
 watch(
   () => props.result,
@@ -165,19 +177,19 @@ watch(
   { deep: true, immediate: true }
 )
 
-const closeColVisibilityMenu = (e: MouseEvent) => {
-  if (colVisibilityRef.value && !colVisibilityRef.value.contains(e.target as Node)) {
-    showColVisibilityMenu.value = false
+const closeFreezeMenu = (e: MouseEvent) => {
+  if (freezeRef.value && !freezeRef.value.contains(e.target as Node)) {
+    showFreezeMenu.value = false
   }
 }
 
 onMounted(() => {
-  document.addEventListener('click', closeColVisibilityMenu)
+  document.addEventListener('click', closeFreezeMenu)
 })
 
 onUnmounted(() => {
   destroyTable()
-  document.removeEventListener('click', closeColVisibilityMenu)
+  document.removeEventListener('click', closeFreezeMenu)
 })
 
 function toggleFilters() {
@@ -190,59 +202,64 @@ function toggleFilters() {
   }, 30)
 }
 
-function populateActiveColumns() {
+function populateFreezeableColumns() {
   if (!table) return
-  activeColumns.value = table.getColumns()
+  freezeableColumns.value = table.getColumns()
     .filter((col: any) => {
       const def = col.getDefinition()
-      return def.field && def.field !== '__rownum' && def.title
+      return def.field && def.field !== '__rownum'
     })
     .map((col: any) => {
       const def = col.getDefinition()
+      let title = def.field
+      if (props.result && props.result.columns) {
+        const colIdx = parseInt(def.field.replace('col_', ''))
+        if (!isNaN(colIdx) && props.result.columns[colIdx]) {
+          title = props.result.columns[colIdx].name
+        }
+      }
       return {
         field: def.field,
-        title: def.title || def.field,
-        visible: col.isVisible()
+        title: title,
+        frozen: !!def.frozen
       }
     })
 }
 
-function toggleColVisibilityMenu() {
-  showColVisibilityMenu.value = !showColVisibilityMenu.value
-  if (showColVisibilityMenu.value) {
-    populateActiveColumns()
+function toggleFreezeMenu() {
+  showFreezeMenu.value = !showFreezeMenu.value
+  if (showFreezeMenu.value) {
+    populateFreezeableColumns()
   }
 }
 
-function toggleColumnVisibility(field: string) {
+async function toggleFreezeColumn(field: string) {
   if (!table) return
-  const col = table.getColumn(field)
-  if (col) {
-    if (col.isVisible()) {
-      col.hide()
-    } else {
-      col.show()
-    }
-    const found = activeColumns.value.find(c => c.field === field)
-    if (found) {
-      found.visible = col.isVisible()
-    }
-  }
-}
-
-function setAllColsVisible(visible: boolean) {
-  if (!table) return
-  activeColumns.value.forEach(colItem => {
-    const col = table.getColumn(colItem.field)
-    if (col) {
-      if (visible) {
-        col.show()
-      } else {
-        col.hide()
-      }
-      colItem.visible = visible
-    }
+  
+  const columns = table.getColumns().filter((col: any) => {
+    const def = col.getDefinition()
+    return def.field && def.field !== '__rownum'
   })
+  
+  const targetIdx = columns.findIndex((col: any) => col.getField() === field)
+  if (targetIdx === -1) return
+  
+  const targetCol = columns[targetIdx]
+  const isCurrentlyFrozen = !!targetCol.getDefinition().frozen
+  
+  if (isCurrentlyFrozen) {
+    // Unfreeze this column and all columns to the right of it
+    for (let i = targetIdx; i < columns.length; i++) {
+      await table.updateColumnDefinition(columns[i].getField(), { frozen: false })
+    }
+  } else {
+    // Freeze this column and all columns to the left of it
+    for (let i = 0; i <= targetIdx; i++) {
+      await table.updateColumnDefinition(columns[i].getField(), { frozen: true })
+    }
+  }
+  
+  populateFreezeableColumns()
 }
 
 function handleRefresh() {

@@ -426,7 +426,35 @@ const handleGlobalKeydown = (e: KeyboardEvent) => {
   }
 }
 
+function saveQueryTabState() {
+  tabsStore.updateTab(props.tab.id, {
+    data: {
+      ...props.tab.data,
+      results: results.value,
+      lastExecutedSql: lastExecutedSql.value,
+      resultHeight: resultHeight.value
+    }
+  })
+}
+
+watch(
+  [results, lastExecutedSql, resultHeight],
+  () => {
+    saveQueryTabState()
+  },
+  { deep: true }
+)
+
 onMounted(async () => {
+  if (props.tab.data) {
+    if (props.tab.data.results) results.value = props.tab.data.results
+    if (props.tab.data.lastExecutedSql) lastExecutedSql.value = props.tab.data.lastExecutedSql
+    if (props.tab.data.resultHeight) {
+      resultHeight.value = props.tab.data.resultHeight
+      editorFlexBasis.value = `calc(100% - ${resultHeight.value + 1}px)`
+    }
+  }
+
   await nextTick()
   if (document.fonts) {
     await document.fonts.ready
