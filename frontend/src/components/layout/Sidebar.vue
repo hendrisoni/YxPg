@@ -202,6 +202,27 @@ const isAllExpanded = ref(false)
 const selectedNodeId = ref<string | null>(null)
 const sidebarWidth = computed(() => uiStore.sidebarWidth)
 
+const isCategoryModalOpen = ref(false)
+const categoryModalMode = ref<'add' | 'rename'>('add')
+const categoryModalInput = ref('')
+const categoryModalNodeId = ref('')
+const categoryModalError = ref('')
+const categoryInputRef = ref<HTMLInputElement | null>(null)
+
+const categoryModalTitle = computed(() => {
+  return categoryModalMode.value === 'add' ? 'Add Category' : 'Rename Category'
+})
+
+watch(isCategoryModalOpen, (isOpen) => {
+  if (isOpen) {
+    categoryModalError.value = ''
+    nextTick(() => {
+      categoryInputRef.value?.focus()
+      categoryInputRef.value?.select()
+    })
+  }
+})
+
 onMounted(() => {
   workspaceStore.loadWorkspace()
 })

@@ -162,6 +162,19 @@
     background-color: rgba(245, 158, 11, 0.1) !important;
   }
 
+  .tabulator .tabulator-cell input {
+    background-color: var(--bg-tertiary) !important;
+    color: var(--text-primary) !important;
+    border: 1px solid var(--accent-teal) !important;
+    padding: 0.125rem 0.375rem !important;
+    border-radius: 4px !important;
+    width: 100% !important;
+    height: 100% !important;
+    font-size: 0.8125rem !important;
+    box-sizing: border-box !important;
+    outline: none !important;
+  }
+
   .tabulator .tabulator-footer {
     background-color: var(--bg-secondary) !important;
     border-top: 1px solid var(--border) !important;

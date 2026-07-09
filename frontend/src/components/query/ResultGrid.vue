@@ -140,6 +140,8 @@ if (typeof window !== 'undefined') {
   ;(window as any).XLSX = XLSX
 }
 import { useConnectionsStore } from '../../stores/connections'
+import { useSchemaStore } from '../../stores/schema'
+import { useUiStore } from '../../stores/ui'
 import type { QueryResult, Tab, BrowseOptions } from '../../types'
 
 const props = defineProps<{
@@ -354,6 +356,53 @@ function parsePgNumeric(str: string): number | null {
   return null
 }
 
+function escapeSqlValue(value: any, dataType: string): string {
+  if (value === null || value === undefined) {
+    return 'NULL'
+  }
+  
+  if (typeof value === 'boolean') {
+    return value ? 'true' : 'false'
+  }
+
+  if (typeof value === 'number') {
+    return value.toString()
+  }
+
+  if (typeof value === 'object') {
+    return `'${JSON.stringify(value).replace(/'/g, "''")}'`
+  }
+
+  const str = String(value)
+  
+  if (str === '') {
+    const typeName = dataType ? dataType.toLowerCase() : ''
+    const isCharOrText = typeName.includes('char') || typeName.includes('text') || typeName.includes('uuid')
+    if (!isCharOrText) {
+      return 'NULL'
+    }
+  }
+
+  const typeName = dataType ? dataType.toLowerCase() : ''
+  const isNum = typeName.includes('int') ||
+                typeName.includes('num') ||
+                typeName.includes('decimal') ||
+                typeName.includes('real') ||
+                typeName.includes('double') ||
+                typeName.includes('float') ||
+                typeName.includes('precision') ||
+                typeName.includes('money')
+  
+  if (isNum) {
+    const parsed = Number(str)
+    if (!isNaN(parsed)) {
+      return str
+    }
+  }
+
+  return `'${str.replace(/'/g, "''")}'`
+}
+
 async function renderTable(result: QueryResult) {
   destroyTable()
 
@@ -361,6 +410,20 @@ async function renderTable(result: QueryResult) {
 
   // Dynamically import Tabulator
   const { TabulatorFull } = await import('tabulator-tables')
+
+  let tableColumns: any[] = []
+  const isTableTab = props.tab && props.tab.type === 'table'
+  if (isTableTab) {
+    const connId = props.tab.connectionId || connectionsStore.currentConnectionId
+    if (connId && props.tab.table) {
+      try {
+        const schemaStore = useSchemaStore()
+        tableColumns = await schemaStore.loadColumns(connId, props.tab.schema || 'public', props.tab.table)
+      } catch (err) {
+        console.error('Failed to load columns for table editing:', err)
+      }
+    }
+  }
 
   // Build columns from result metadata
   const columns = [
@@ -463,6 +526,14 @@ async function renderTable(result: QueryResult) {
         },
         sorter: numericCol ? 'number' : 'string',
         headerSort: true,
+        editor: isTableTab ? "input" : undefined,
+        editable: isTableTab ? false : undefined,
+        cellDblClick: isTableTab ? (e: any, cell: any) => {
+          e.preventDefault()
+          setTimeout(() => {
+            cell.edit(true)
+          }, 50)
+        } : undefined,
       }
     })
   ]
@@ -574,6 +645,93 @@ async function renderTable(result: QueryResult) {
   table.on('dataLoaded', () => {
     displayedCount.value = table.getData().length
   })
+
+  if (isTableTab) {
+    table.on('cellEdited', async (cell: any) => {
+      const field = cell.getField()
+      if (field === '__rownum') return
+      
+      const colIdx = parseInt(field.replace('col_', ''))
+      if (isNaN(colIdx) || !props.result || !props.result.columns[colIdx]) return
+
+      const colMeta = props.result.columns[colIdx]
+      const colName = colMeta.name
+      const newValue = cell.getValue()
+      const oldValue = cell.getOldValue()
+
+      if (newValue === oldValue) return
+
+      const connId = props.tab?.connectionId || connectionsStore.currentConnectionId
+      if (!connId || !props.tab?.table) {
+        cell.restoreOldValue()
+        return
+      }
+
+      const schema = props.tab.schema || 'public'
+      const tableName = props.tab.table
+
+      // Find PK columns in the schema
+      const pkColumns = tableColumns.filter((c: any) => c.is_primary_key)
+      const columnsToUse = pkColumns.length > 0 ? pkColumns.map((c: any) => c.column_name) : props.result.columns.map((c: any) => c.name)
+
+      const rowData = cell.getRow().getData()
+      const whereClauses: string[] = []
+      
+      for (const keyColName of columnsToUse) {
+        const targetColIdx = props.result.columns.findIndex((c: any) => c.name === keyColName)
+        if (targetColIdx === -1) continue
+
+        const targetField = `col_${targetColIdx}`
+        const valToUse = targetField === field ? oldValue : rowData[targetField]
+        
+        const targetColMeta = props.result.columns[targetColIdx]
+        const escapedVal = escapeSqlValue(valToUse, targetColMeta.data_type)
+        
+        if (escapedVal === 'NULL') {
+          whereClauses.push(`"${keyColName}" IS NULL`)
+        } else {
+          whereClauses.push(`"${keyColName}" = ${escapedVal}`)
+        }
+      }
+
+      if (whereClauses.length === 0) {
+        const uiStore = useUiStore()
+        uiStore.addNotification({
+          type: 'error',
+          title: 'Edit Error',
+          message: 'Cannot identify row for update. Missing identifiers.'
+        })
+        cell.restoreOldValue()
+        return
+      }
+
+      const escapedNewVal = escapeSqlValue(newValue, colMeta.data_type)
+      const updateSql = `UPDATE "${schema}"."${tableName}" SET "${colName}" = ${escapedNewVal} WHERE ${whereClauses.join(' AND ')};`
+
+      try {
+        const bindings = connectionsStore.getWailsBindings()
+        const queryRes = await bindings.ExecuteQuery(connId, updateSql, 30)
+        if (queryRes.error) {
+          throw new Error(queryRes.error)
+        }
+        
+        const uiStore = useUiStore()
+        uiStore.addNotification({
+          type: 'success',
+          title: 'Row Updated',
+          message: 'Changes saved successfully.'
+        })
+      } catch (err: any) {
+        const uiStore = useUiStore()
+        uiStore.addNotification({
+          type: 'error',
+          title: 'Update Failed',
+          message: err.message || 'Failed to update row.'
+        })
+        cell.restoreOldValue()
+      }
+    })
+  }
 }
 
 function destroyTable() {
