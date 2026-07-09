@@ -334,7 +334,8 @@ const contextMenuItems = computed<ContextMenuItem[]>(() => {
     return [
       { label: `Open ${props.node.type === 'table' ? 'Table' : 'View'}`, action: 'open' },
       { label: 'Generate SELECT (DML)', action: 'dml' },
-      { label: 'Generate CREATE DDL', action: 'ddl' }
+      { label: 'Generate CREATE DDL', action: 'ddl' },
+      { label: 'Properties', action: 'properties' }
     ]
   }
   return []
@@ -365,6 +366,8 @@ async function handleMenuSelect(action: string) {
 
   if (action === 'open') {
     emit('open-table', schema, table, connectionId)
+  } else if (action === 'properties') {
+    emit('view-ddl', schema, table, connectionId)
   } else if (action === 'dml') {
     try {
       const cols = await schemaStore.loadColumns(connectionId, schema, table)
