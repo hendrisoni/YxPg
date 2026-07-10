@@ -33,6 +33,16 @@
         </svg>
         <span>Create Index</span>
       </button>
+      <button
+        @click="activeTab = 'dependencies'"
+        class="px-3.5 py-1.5 text-xs rounded-md transition-colors flex items-center gap-1.5"
+        :class="activeTab === 'dependencies' ? 'bg-teal-accent/15 text-teal-accent font-semibold border border-teal-accent/30' : 'text-text-secondary hover:text-text-primary hover:bg-navy-hover border border-transparent'"
+      >
+        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+        </svg>
+        <span>Dependencies</span>
+      </button>
       
       <div class="flex-1"></div>
       
@@ -338,6 +348,11 @@
           </div>
         </div>
       </div>
+
+      <!-- Dependencies View -->
+      <div v-show="activeTab === 'dependencies'" class="h-full w-full overflow-hidden">
+        <DDLView_Depend :tab="props.tab" :active-tab="activeTab" />
+      </div>
     </div>
 
     <!-- Floating Context Menu -->
@@ -579,6 +594,7 @@ import { useUiStore } from '../stores/ui'
 import type { Tab } from '../types'
 import Modal from '../components/shared/Modal.vue'
 import * as App from '../../wailsjs/go/main/App'
+import DDLView_Depend from './DDLView_Depend.vue'
 
 const props = defineProps<{
   tab: Tab
@@ -588,7 +604,7 @@ const connectionsStore = useConnectionsStore()
 const schemaStore = useSchemaStore()
 const uiStore = useUiStore()
 
-const activeTab = ref<'columns' | 'ddl' | 'create-index'>('columns')
+const activeTab = ref<'columns' | 'ddl' | 'create-index' | 'dependencies'>('columns')
 const columnsList = ref<any[]>([])
 const tableContainer = ref<HTMLElement | null>(null)
 let tabulator: any = null
@@ -1440,7 +1456,7 @@ watch(activeTab, (newTab) => {
   } else if (newTab === 'create-index') {
     loadIndexes()
     initIndexPreviewEditor()
-  } else {
+  } else if (newTab === 'columns') {
     loadColumns()
   }
 })
@@ -1453,7 +1469,7 @@ watch(() => props.tab, () => {
     cancelEdit()
     loadIndexes()
     initIndexPreviewEditor()
-  } else {
+  } else if (activeTab.value === 'columns') {
     loadColumns()
   }
 }, { deep: true })
