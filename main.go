@@ -17,7 +17,7 @@ func main() {
 
 	// Create application with options
 	err := wails.Run(&options.App{
-		Title:            "YxPg",
+		Title:            "YxPG Studio",
 		Width:            700,
 		Height:           700,
 		MinWidth:         500,
