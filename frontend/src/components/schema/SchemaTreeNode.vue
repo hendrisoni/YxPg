@@ -243,10 +243,11 @@ function handleDoubleClick() {
     toggleExpand()
   } else if (props.node.data) {
     const { schema, name, connectionId } = props.node.data
+    const objectName = name || props.node.label
     if (props.node.type === 'table' || props.node.type === 'view') {
-      emit('open-table', schema, name, connectionId)
+      emit('view-ddl', schema, objectName, connectionId)
     } else if (props.node.type === 'function') {
-      emit('open-query', schema, name, connectionId)
+      emit('open-query', schema, objectName, connectionId)
     }
   }
 }

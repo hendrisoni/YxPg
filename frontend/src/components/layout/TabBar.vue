@@ -33,8 +33,23 @@
           <svg v-else-if="tab.type === 'table'" class="w-3.5 h-3.5 flex-shrink-0 text-accent-green" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18M3 15h18M9 3v18" />
           </svg>
-          <svg v-else-if="tab.type === 'builder'" class="w-3.5 h-3.5 flex-shrink-0 text-accent-amber" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="3" /><path d="M12 3v6m0 6v6m-9-9h6m6 0h6" />
+          <svg v-else-if="tab.type === 'builder'" class="w-3.5 h-3.5 flex-shrink-0 text-orange-500 drop-shadow-[0_0_3px_rgba(249,115,22,0.85)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <!-- Top Left Table -->
+            <rect x="2" y="3" width="8" height="7" rx="1" />
+            <path d="M2 6h8" />
+            
+            <!-- Top Right Table -->
+            <rect x="14" y="3" width="8" height="7" rx="1" />
+            <path d="M14 6h8" />
+            
+            <!-- Bottom Table -->
+            <rect x="8" y="14" width="8" height="7" rx="1" />
+            <path d="M8 17h8" />
+            
+            <!-- Connection Lines -->
+            <path d="M10 6h4" />
+            <path d="M6 10v2h12v-2" />
+            <path d="M12 12v2" />
           </svg>
           <svg v-else-if="tab.type === 'ddl'" class="w-3.5 h-3.5 flex-shrink-0 text-accent-red" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
@@ -45,9 +60,25 @@
             <polyline points="17 8 12 3 7 8" />
             <line x1="12" y1="3" x2="12" y2="15" />
           </svg>
+          <svg v-else-if="tab.type === 'functions-triggers'" class="w-3.5 h-3.5 flex-shrink-0 text-purple-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+          </svg>
 
           <!-- Modified indicator -->
           <span v-if="tab.modified" class="w-1.5 h-1.5 rounded-full bg-accent-amber flex-shrink-0"></span>
+
+          <!-- Connection Server Label -->
+          <span 
+            v-if="getConnectionName(tab.connectionId)" 
+            class="text-[9px] px-1 py-0.5 rounded leading-none font-bold select-none flex-shrink-0 border border-transparent"
+            :style="{
+              backgroundColor: getConnectionColor(tab.connectionId) ? getConnectionColor(tab.connectionId) + '15' : 'rgba(59, 130, 246, 0.15)',
+              borderColor: getConnectionColor(tab.connectionId) ? getConnectionColor(tab.connectionId) + '30' : 'rgba(59, 130, 246, 0.3)',
+              color: getConnectionColor(tab.connectionId) || '#3B82F6'
+            }"
+          >
+            {{ getConnectionName(tab.connectionId) }}
+          </span>
 
           <!-- Tab title -->
           <span class="text-xs whitespace-nowrap overflow-hidden text-ellipsis max-w-[120px]">
@@ -78,16 +109,31 @@
       </button>
     </div>
 
-    <!-- Query Builder static action button on the right -->
+    <!-- Builder static action button on the right -->
     <button
       @click="$emit('openBuilder')"
-      class="flex items-center gap-1.5 px-3 h-[35px] text-xs text-text-secondary hover:text-text-primary hover:bg-navy-hover transition-colors border-l border-b border-navy-border flex-shrink-0"
-      title="Open Query Builder"
+      class="flex items-center gap-1.5 px-3 h-[35px] text-xs text-text-secondary hover:text-orange-400 hover:bg-orange-500/5 hover:shadow-[inset_0_-2px_0_0_#f97316] transition-all border-l border-b border-navy-border flex-shrink-0"
+      title="Open Builder"
     >
-      <svg class="w-3.5 h-3.5 text-accent-amber" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="12" cy="12" r="3" /><path d="M12 3v6m0 6v6m-9-9h6m6 0h6" />
+      <svg class="w-3.5 h-3.5 text-orange-500 drop-shadow-[0_0_3px_rgba(249,115,22,0.85)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <!-- Top Left Table -->
+        <rect x="2" y="3" width="8" height="7" rx="1" />
+        <path d="M2 6h8" />
+        
+        <!-- Top Right Table -->
+        <rect x="14" y="3" width="8" height="7" rx="1" />
+        <path d="M14 6h8" />
+        
+        <!-- Bottom Table -->
+        <rect x="8" y="14" width="8" height="7" rx="1" />
+        <path d="M8 17h8" />
+        
+        <!-- Connection Lines -->
+        <path d="M10 6h4" />
+        <path d="M6 10v2h12v-2" />
+        <path d="M12 12v2" />
       </svg>
-      <span>Query Builder</span>
+      <span class="hover:drop-shadow-[0_0_4px_rgba(249,115,22,0.5)] transition-all">Builder</span>
     </button>
   </nav>
 
@@ -106,6 +152,7 @@
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { useTabsStore } from '../../stores/tabs'
 import { useUiStore } from '../../stores/ui'
+import { useConnectionsStore } from '../../stores/connections'
 import type { Tab } from '../../types'
 import ContextMenu from '../shared/ContextMenu.vue'
 import type { ContextMenuItem } from '../shared/ContextMenu.vue'
@@ -114,6 +161,19 @@ const emit = defineEmits(['newTab', 'openBuilder'])
 
 const tabsStore = useTabsStore()
 const uiStore = useUiStore()
+const connectionsStore = useConnectionsStore()
+
+function getConnectionName(connId?: string): string {
+  if (!connId) return ''
+  const conn = connectionsStore.connections.find(c => c.id === connId)
+  return conn ? conn.name : ''
+}
+
+function getConnectionColor(connId?: string): string {
+  if (!connId) return ''
+  const conn = connectionsStore.connections.find(c => c.id === connId)
+  return conn?.color || ''
+}
 
 const showMenu = ref(false)
 const menuX = ref(0)

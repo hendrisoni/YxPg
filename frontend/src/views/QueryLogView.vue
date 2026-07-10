@@ -134,7 +134,6 @@ function copyQuery(query: string) {
 
 function loadQuery(query: string) {
   tabsStore.createTab('query', {
-    title: 'Query',
     sql: query
   })
 }

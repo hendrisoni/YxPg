@@ -49,6 +49,15 @@
           </svg>
         </button>
 
+        <!-- Functions & Triggers Button -->
+        <button @click="$emit('openFunctionsTriggers')"
+          class="p-2 rounded-lg text-text-secondary hover:text-teal-accent hover:bg-navy-hover transition-colors cursor-pointer"
+          title="Functions & Triggers Manager">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+          </svg>
+        </button>
+
 
       </div>
 
@@ -201,7 +210,7 @@ import type { TreeNode } from '../../types'
 import SchemaTreeNode from '../schema/SchemaTreeNode.vue'
 import Modal from '../shared/Modal.vue'
 
-const emit = defineEmits(['toggle', 'newConnection', 'searchTable', 'openSettings', 'openWorkspace', 'openBackup', 'addCategory', 'openReferential'])
+const emit = defineEmits(['toggle', 'newConnection', 'searchTable', 'openSettings', 'openWorkspace', 'openBackup', 'addCategory', 'openReferential', 'openFunctionsTriggers'])
 
 const connectionsStore = useConnectionsStore()
 const workspaceStore = useWorkspaceStore()

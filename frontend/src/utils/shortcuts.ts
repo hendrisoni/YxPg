@@ -23,7 +23,7 @@ export const SHORTCUTS: Shortcut[] = [
   { key: 'N', ctrl: true, action: 'newConnection', description: 'New Connection' },
   { key: 'k', ctrl: true, action: 'toggleTableSearch', description: 'Search Tables/Views/Functions' },
   { key: '/', ctrl: true, action: 'toggleComment', description: 'Toggle Comment' },
-  { key: 'F1', action: 'openBuilder', description: 'Query Builder' },
+  { key: 'F1', action: 'openBuilder', description: 'Builder' },
   { key: 'F2', action: 'openDesigner', description: 'Table Designer' },
   { key: 'F3', action: 'findNext', description: 'Find Next' },
 ]

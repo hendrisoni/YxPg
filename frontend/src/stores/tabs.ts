@@ -1,10 +1,12 @@
 import { defineStore } from 'pinia'
 import { ref, computed, watch } from 'vue'
 import type { Tab } from '../types'
+import { useUiStore } from './ui'
 
 let tabCounter = 0
+let queryCounter = 0
 
-// Initialize tabCounter to prevent collisions
+// Initialize tabCounter and queryCounter to prevent collisions
 const savedTabsStr = localStorage.getItem('tabs:open_tabs')
 if (savedTabsStr) {
   try {
@@ -17,10 +19,22 @@ if (savedTabsStr) {
           tabCounter = count
         }
       }
+      if (tab.type === 'query') {
+        const titleNum = parseInt(tab.title.replace(/\D/g, ''))
+        if (!isNaN(titleNum) && titleNum > queryCounter) {
+          queryCounter = titleNum
+        }
+      }
     }
   } catch (e) {
     // Ignore parse errors on startup
   }
+}
+
+const savedQueryCounter = parseInt(localStorage.getItem('tabs:query_counter') || '0')
+const normalizedSavedQueryCounter = savedQueryCounter > 15 ? (savedQueryCounter % 15 || 15) : savedQueryCounter
+if (normalizedSavedQueryCounter > queryCounter) {
+  queryCounter = normalizedSavedQueryCounter
 }
 
 export const useTabsStore = defineStore('tabs', () => {
@@ -65,7 +79,20 @@ export const useTabsStore = defineStore('tabs', () => {
     return tabs.value.find(t => t.id === activeTabId.value) || null
   })
 
-  function createTab(type: Tab['type'], options: Partial<Tab> = {}): Tab {
+  function createTab(type: Tab['type'], options: Partial<Tab> = {}): Tab | null {
+    if (type === 'query') {
+      const queryTabsCount = tabs.value.filter(t => t.type === 'query').length
+      if (queryTabsCount >= 25) {
+        const uiStore = useUiStore()
+        uiStore.addNotification({
+          type: 'error',
+          title: 'Limit Reached',
+          message: 'Cannot add tab. Maximum of 25 query tabs allowed.'
+        })
+        return null
+      }
+    }
+
     tabCounter++
     const id = `${type}_${tabCounter}_${Date.now()}`
     const tab: Tab = {
@@ -120,7 +147,17 @@ export const useTabsStore = defineStore('tabs', () => {
 
   function getDefaultTitle(type: Tab['type'], options: Partial<Tab>): string {
     switch (type) {
-      case 'query': return options.title || `Query ${tabCounter}`
+      case 'query': {
+        if (!options.title) {
+          queryCounter++
+          if (queryCounter > 15) {
+            queryCounter = 1
+          }
+          localStorage.setItem('tabs:query_counter', queryCounter.toString())
+          return queryCounter.toString()
+        }
+        return options.title
+      }
       case 'table': return options.table || 'Table'
       case 'builder': return options.title || `Builder ${tabCounter}`
       case 'ddl': return options.title || options.table || 'DDL'
@@ -128,6 +165,7 @@ export const useTabsStore = defineStore('tabs', () => {
       case 'log': return 'Query Log'
       case 'backup': return 'Backup'
       case 'referential': return 'Referential Integrity'
+      case 'functions-triggers': return 'Functions & Triggers'
       default: return 'Untitled'
     }
   }

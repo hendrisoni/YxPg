@@ -13,6 +13,7 @@
         @open-backup="handleOpenBackup"
         @add-category="handleAddCategory"
         @open-referential="handleOpenReferential"
+        @open-functions-triggers="handleOpenFunctionsTriggers"
       />
 
       <!-- Resize Handle -->
@@ -62,6 +63,11 @@
             v-else-if="tabsStore.activeTab.type === 'referential'"
             :tab="tabsStore.activeTab"
             :key="'referential-' + tabsStore.activeTab.id"
+          />
+          <FunctionsTriggersView
+            v-else-if="tabsStore.activeTab.type === 'functions-triggers'"
+            :tab="tabsStore.activeTab"
+            :key="'functions-triggers-' + tabsStore.activeTab.id"
           />
         </div>
       </div>
@@ -141,6 +147,7 @@ import DDLView from './DDLView.vue'
 import QueryLogView from './QueryLogView.vue'
 import BackupView from './BackupView.vue'
 import ReferentialView from './ReferentialView.vue'
+import FunctionsTriggersView from './FunctionsTriggersView.vue'
 import { useWorkspaceStore } from '../stores/workspace'
 
 const connectionsStore = useConnectionsStore()
@@ -221,7 +228,7 @@ onMounted(() => {
       window.dispatchEvent(new CustomEvent('format-active-query'))
     },
     openBuilder: () => {
-      tabsStore.createTab('builder', { title: 'Query Builder' })
+      tabsStore.createTab('builder', { title: 'Builder' })
     },
     openDesigner: () => {
       tabsStore.createTab('ddl', { title: 'Table Designer' })
@@ -236,13 +243,12 @@ onMounted(() => {
 
 function createNewTab() {
   tabsStore.createTab('query', {
-    title: `Query ${tabsStore.tabs.length + 1}`,
     connectionId: connectionsStore.currentConnectionId || undefined,
   })
 }
 
 function openQueryBuilder() {
-  tabsStore.createTab('builder', { title: 'Query Builder' })
+  tabsStore.createTab('builder', { title: 'Builder' })
 }
 
 function handleOpenBackup() {
@@ -255,6 +261,22 @@ function handleAddCategory() {
 
 function handleOpenReferential() {
   tabsStore.createTab('referential', { title: 'Referential Integrity' })
+}
+
+function handleOpenFunctionsTriggers() {
+  const connId = connectionsStore.currentConnectionId
+  if (!connId) {
+    uiStore.addNotification({
+      type: 'warning',
+      title: 'No Connection',
+      message: 'Please connect to a database to open Functions & Triggers Manager'
+    })
+    return
+  }
+  tabsStore.createTab('functions-triggers', {
+    title: 'Functions & Triggers',
+    connectionId: connId,
+  })
 }
 
 async function handleSaveConnection(conn: Connection) {

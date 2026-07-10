@@ -47,7 +47,18 @@
       <div class="flex-1"></div>
       
       <!-- Table descriptor -->
-      <div class="text-xs text-text-muted font-mono bg-navy-tertiary/60 border border-navy-border/50 px-2.5 py-1 rounded">
+      <div class="text-xs text-text-muted font-mono bg-navy-tertiary/60 border border-navy-border/50 px-2.5 py-1 rounded flex items-center gap-1.5">
+        <span 
+          v-if="connectionName" 
+          class="px-1.5 py-0.5 rounded text-[10px] font-sans font-semibold border select-none"
+          :style="{ 
+            backgroundColor: connectionColor ? connectionColor + '15' : 'rgba(59, 130, 246, 0.15)',
+            borderColor: connectionColor ? connectionColor + '30' : 'rgba(59, 130, 246, 0.3)',
+            color: connectionColor || '#3B82F6'
+          }"
+        >
+          {{ connectionName }}
+        </span>
         <span>{{ tab.schema || 'public' }}</span>
         <span class="text-teal-accent">.</span>
         <span class="text-text-primary font-semibold">{{ tab.table }}</span>
@@ -603,6 +614,20 @@ const props = defineProps<{
 const connectionsStore = useConnectionsStore()
 const schemaStore = useSchemaStore()
 const uiStore = useUiStore()
+
+const connectionName = computed(() => {
+  const connId = props.tab.connectionId
+  if (!connId) return ''
+  const conn = connectionsStore.connections.find(c => c.id === connId)
+  return conn ? conn.name : ''
+})
+
+const connectionColor = computed(() => {
+  const connId = props.tab.connectionId
+  if (!connId) return ''
+  const conn = connectionsStore.connections.find(c => c.id === connId)
+  return conn?.color || ''
+})
 
 const activeTab = ref<'columns' | 'ddl' | 'create-index' | 'dependencies'>('columns')
 const columnsList = ref<any[]>([])

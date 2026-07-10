@@ -156,7 +156,7 @@ MaxConns=10, MinConns=1, MaxConnLifetime=30m, MaxConnIdleTime=5m per connection.
 | `Ctrl+K` | Search Tables/Views (palette) |
 | `Ctrl+R` | Refresh Schema |
 | `Ctrl+N` | New Connection |
-| `F1` | Query Builder |
+| `F1` | Builder |
 | `F2` | Table Designer |
 
 ---
