@@ -23,6 +23,16 @@
         </svg>
         <span>DDL</span>
       </button>
+      <button
+        @click="activeTab = 'create-index'"
+        class="px-3.5 py-1.5 text-xs rounded-md transition-colors flex items-center gap-1.5"
+        :class="activeTab === 'create-index' ? 'bg-teal-accent/15 text-teal-accent font-semibold border border-teal-accent/30' : 'text-text-secondary hover:text-text-primary hover:bg-navy-hover border border-transparent'"
+      >
+        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+        </svg>
+        <span>Create Index</span>
+      </button>
       
       <div class="flex-1"></div>
       
@@ -82,6 +92,249 @@
               </svg>
               Copy DDL
             </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Create Index View -->
+      <div v-show="activeTab === 'create-index'" class="h-full w-full flex flex-col overflow-hidden bg-navy-primary p-4">
+        <div class="flex-1 flex gap-4 min-h-0 overflow-hidden">
+          
+          <!-- Column 1: Existing Indexes -->
+          <div class="w-[320px] flex-shrink-0 flex flex-col min-h-0 bg-navy-secondary border border-navy-border rounded-lg p-4 space-y-3">
+            <h3 class="text-xs font-semibold text-text-primary flex items-center gap-2 select-none">
+              <svg class="w-3.5 h-3.5 text-accent-blue" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z" />
+                <path d="M6 6h10M6 10h10" />
+              </svg>
+              Existing Indexes ({{ indexesList.length }})
+            </h3>
+            
+            <div v-if="loadingIndexes" class="flex-1 flex items-center justify-center">
+              <div class="w-5 h-5 border-2 border-teal-accent border-t-transparent rounded-full animate-spin"></div>
+            </div>
+            
+            <div v-else-if="indexesList.length === 0" class="flex-1 flex items-center justify-center text-[11px] text-text-muted bg-navy-tertiary/20 border border-navy-border/50 rounded-lg p-3 text-center select-none">
+              No indexes found on this table.
+            </div>
+            
+            <div v-else class="flex-1 overflow-y-auto space-y-2 pr-1">
+              <div
+                v-for="idx in indexesList"
+                :key="idx.index_name"
+                class="flex items-start justify-between p-2.5 rounded-lg bg-navy-tertiary border border-navy-border/60 hover:border-navy-border transition-colors text-xs"
+                :class="editingIndexName === idx.index_name ? 'border-accent-blue bg-accent-blue/5' : ''"
+              >
+                <div class="space-y-1 min-w-0 pr-2 select-text">
+                  <div class="flex items-center gap-1.5 flex-wrap">
+                    <span class="font-semibold text-text-primary font-mono truncate" :title="idx.index_name">
+                      {{ idx.index_name }}
+                    </span>
+                    <span
+                      v-if="idx.is_unique"
+                      class="px-1.5 py-0.5 rounded bg-teal-accent/10 border border-teal-accent/20 text-[9px] text-teal-accent uppercase font-bold"
+                    >
+                      Unique
+                    </span>
+                    <span class="px-1.5 py-0.5 rounded bg-navy-hover border border-navy-border text-[9px] text-text-muted uppercase">
+                      {{ idx.index_type }}
+                    </span>
+                  </div>
+                  <div class="text-[10px] text-text-muted font-mono truncate">
+                    columns: {{ idx.columns.join(', ') }}
+                  </div>
+                  <div v-if="extractWhereClause(idx.definition)" class="text-[9px] text-accent-amber font-mono truncate">
+                    where: {{ extractWhereClause(idx.definition) }}
+                  </div>
+                </div>
+                
+                <!-- Actions -->
+                <div class="flex items-center gap-1 flex-shrink-0 select-none">
+                  <button
+                    @click="editIndex(idx)"
+                    class="p-1 hover:bg-navy-hover rounded text-text-secondary hover:text-text-primary transition-colors cursor-pointer"
+                    title="Edit Index"
+                  >
+                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+                    </svg>
+                  </button>
+                  <button
+                    @click="handleDropIndex(idx.index_name)"
+                    class="p-1 hover:bg-red-500/10 rounded text-text-secondary hover:text-accent-red transition-colors cursor-pointer"
+                    title="Drop Index"
+                  >
+                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Column 2: Index Configuration Form -->
+          <div class="flex-1 flex flex-col min-h-0 bg-navy-secondary border border-navy-border rounded-lg p-4 space-y-4">
+            <div class="flex items-center justify-between select-none flex-shrink-0">
+              <h3 class="text-xs font-semibold text-text-primary flex items-center gap-2">
+                <svg class="w-3.5 h-3.5 text-teal-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>
+                </svg>
+                <span>{{ editingIndexName ? 'Edit Index Definition' : 'Create New Index' }}</span>
+              </h3>
+              <span
+                v-if="editingIndexName"
+                class="px-2 py-0.5 rounded bg-accent-blue/15 border border-accent-blue/30 text-[9px] text-accent-blue font-semibold uppercase tracking-wider"
+              >
+                Edit Mode
+              </span>
+            </div>
+
+            <!-- Warning for edit mode -->
+            <div v-if="editingIndexName" class="p-2.5 bg-accent-blue/10 border border-accent-blue/20 rounded-md text-[10px] text-accent-blue/90 space-y-1 select-none flex-shrink-0">
+              <div class="font-bold flex items-center gap-1">
+                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>
+                </svg>
+                Index Modification Note
+              </div>
+              <div>Altering an index in PostgreSQL drops the existing index and recreates it with the new definition.</div>
+            </div>
+
+            <div class="flex-1 overflow-y-auto space-y-4 pr-1">
+              <!-- Index Name -->
+              <div class="flex flex-col gap-1">
+                <label class="text-[11px] font-semibold text-text-secondary select-none">Index Name</label>
+                <div class="flex gap-2">
+                  <input
+                    type="text"
+                    v-model="indexName"
+                    @input="isNameManual = true"
+                    placeholder="e.g. idx_table_column"
+                    class="flex-1 text-xs bg-navy-tertiary border border-navy-border rounded-md px-2.5 py-1.5 text-text-primary focus:border-teal-accent focus:outline-none focus:ring-0"
+                  />
+                  <button
+                    type="button"
+                    @click="isNameManual = false; indexName = autoIndexName"
+                    class="px-2.5 py-1.5 border border-navy-border rounded-md text-text-secondary hover:bg-navy-hover hover:text-text-primary text-[10px] transition-colors cursor-pointer select-none"
+                    title="Reset to auto-generated name"
+                  >
+                    Auto
+                  </button>
+                </div>
+              </div>
+
+              <!-- Index Type & Unique Checkbox -->
+              <div class="grid grid-cols-2 gap-4">
+                <div class="flex flex-col gap-1">
+                  <label class="text-[11px] font-semibold text-text-secondary select-none">Index Type</label>
+                  <select
+                    v-model="indexType"
+                    class="w-full text-xs bg-navy-tertiary border border-navy-border rounded-md px-2.5 py-1.5 text-text-primary focus:border-teal-accent focus:outline-none cursor-pointer"
+                  >
+                    <option value="btree">B-Tree (Default)</option>
+                    <option value="hash">Hash</option>
+                    <option value="gin">GIN</option>
+                    <option value="gist">GiST</option>
+                    <option value="brin">BRIN</option>
+                  </select>
+                </div>
+                <div class="flex flex-col justify-end pb-1 select-none">
+                  <label class="flex items-center gap-2 cursor-pointer text-text-secondary hover:text-text-primary transition-colors py-1.5">
+                    <input
+                      type="checkbox"
+                      v-model="isUnique"
+                      class="rounded bg-navy-tertiary border-navy-border text-teal-accent focus:ring-0 cursor-pointer w-3.5 h-3.5"
+                    />
+                    <span class="text-xs font-semibold">Unique Index</span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Columns Selection -->
+              <div class="flex flex-col gap-1">
+                <label class="text-[11px] font-semibold text-text-secondary select-none">Columns (Select one or more)</label>
+                <div class="border border-navy-border rounded-md bg-navy-tertiary max-h-[160px] overflow-y-auto divide-y divide-navy-border/50">
+                  <label
+                    v-for="col in columnsList"
+                    :key="col.column_name"
+                    class="flex items-center gap-3 px-3 py-1.5 hover:bg-navy-hover cursor-pointer transition-colors text-xs text-text-secondary hover:text-text-primary"
+                  >
+                    <input
+                      type="checkbox"
+                      :value="col.column_name"
+                      v-model="selectedColumns"
+                      class="rounded bg-navy-tertiary border-navy-border text-teal-accent focus:ring-0 cursor-pointer w-3.5 h-3.5"
+                    />
+                    <span class="font-mono text-text-primary">{{ col.column_name }}</span>
+                    <span class="text-[10px] text-text-muted">({{ col.data_type }})</span>
+                    <span v-if="col.is_primary_key" class="text-[10px] text-yellow-500 font-semibold flex items-center gap-0.5 ml-auto">
+                      <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+                      PK
+                    </span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- WHERE Condition -->
+              <div class="flex flex-col gap-1">
+                <label class="text-[11px] font-semibold text-text-secondary select-none">Partial Index Condition (WHERE) <span class="text-text-muted font-normal">(Optional)</span></label>
+                <textarea
+                  v-model="indexWhere"
+                  placeholder="e.g. deleted_at IS NULL or status = 'active'"
+                  rows="2"
+                  class="w-full text-xs bg-navy-tertiary border border-navy-border rounded-md px-2.5 py-1.5 text-text-primary focus:border-teal-accent focus:outline-none focus:ring-0 font-mono resize-none"
+                ></textarea>
+              </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="pt-2 flex gap-2 select-none flex-shrink-0">
+              <button
+                v-if="editingIndexName"
+                type="button"
+                @click="cancelEdit"
+                class="flex-1 py-2 border border-navy-border text-text-secondary hover:text-text-primary hover:bg-navy-hover font-semibold rounded-md transition-colors text-xs text-center cursor-pointer"
+              >
+                Cancel Edit
+              </button>
+              <button
+                type="button"
+                @click="handleCreateIndex"
+                :disabled="selectedColumns.length === 0 || !indexName.trim() || creatingIndex"
+                class="flex-1 py-2 bg-teal-accent text-navy-primary font-semibold rounded-md hover:bg-teal-hover transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed text-xs"
+              >
+                <div v-if="creatingIndex" class="w-3.5 h-3.5 border-2 border-navy-primary border-t-transparent rounded-full animate-spin"></div>
+                <span>{{ editingIndexName ? 'Save Index' : 'Create Index' }}</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Column 3: Live SQL Preview -->
+          <div class="flex-1 flex flex-col min-h-0 bg-navy-secondary border border-navy-border rounded-lg p-4 space-y-3">
+            <div class="flex items-center justify-between flex-shrink-0 select-none">
+              <h3 class="text-xs font-semibold text-text-primary flex items-center gap-2">
+                <svg class="w-3.5 h-3.5 text-accent-blue" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                </svg>
+                SQL Preview
+              </h3>
+              <button
+                @click="copyIndexDdl"
+                class="px-2.5 py-1 text-[11px] border border-navy-border rounded text-text-secondary hover:bg-navy-hover hover:text-text-primary transition-colors flex items-center gap-1.5 cursor-pointer"
+              >
+                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                </svg>
+                Copy SQL
+              </button>
+            </div>
+
+            <div class="flex-1 w-full overflow-hidden min-h-0 bg-navy-tertiary border border-navy-border rounded-lg relative">
+              <div ref="indexPreviewContainer" class="h-full w-full overflow-hidden"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -325,6 +578,7 @@ import { useSchemaStore } from '../stores/schema'
 import { useUiStore } from '../stores/ui'
 import type { Tab } from '../types'
 import Modal from '../components/shared/Modal.vue'
+import * as App from '../../wailsjs/go/main/App'
 
 const props = defineProps<{
   tab: Tab
@@ -334,7 +588,7 @@ const connectionsStore = useConnectionsStore()
 const schemaStore = useSchemaStore()
 const uiStore = useUiStore()
 
-const activeTab = ref<'columns' | 'ddl'>('columns')
+const activeTab = ref<'columns' | 'ddl' | 'create-index'>('columns')
 const columnsList = ref<any[]>([])
 const tableContainer = ref<HTMLElement | null>(null)
 let tabulator: any = null
@@ -343,6 +597,73 @@ const ddlScript = ref('')
 const loadingDdl = ref(false)
 const ddlEditorContainer = ref<HTMLElement | null>(null)
 let ddlEditor: any = null
+
+// Create Index State
+const indexName = ref('')
+const isUnique = ref(false)
+const indexType = ref('btree')
+const selectedColumns = ref<string[]>([])
+const indexWhere = ref('')
+const creatingIndex = ref(false)
+const isNameManual = ref(false)
+const indexPreviewContainer = ref<HTMLElement | null>(null)
+let indexPreviewEditor: any = null
+
+// Existing Indexes State
+const indexesList = ref<any[]>([])
+const loadingIndexes = ref(false)
+const editingIndexName = ref<string | null>(null)
+
+const extractWhereClause = (definition: string) => {
+  const match = definition.match(/WHERE\s+(.+)$/i)
+  if (match) {
+    let clause = match[1].trim()
+    if (clause.startsWith('(') && clause.endsWith(')')) {
+      clause = clause.slice(1, -1).trim()
+    }
+    return clause
+  }
+  return ''
+}
+
+const autoIndexName = computed(() => {
+  const prefix = isUnique.value ? 'uk' : 'idx'
+  const cols = selectedColumns.value.map(c => c.replace(/[^a-zA-Z0-9_]/g, '')).join('_')
+  return `${prefix}_${props.tab.table}_${cols || 'cols'}`
+})
+
+// Auto-generate name unless manual
+watch(autoIndexName, (newVal) => {
+  if (!isNameManual.value) {
+    indexName.value = newVal
+  }
+})
+
+const liveDdl = computed(() => {
+  const schema = props.tab.schema || 'public'
+  const table = props.tab.table
+  
+  let dropDdl = ''
+  if (editingIndexName.value) {
+    dropDdl = `-- Drop existing index\nDROP INDEX IF EXISTS "${schema}"."${editingIndexName.value}";\n\n-- Create new index\n`
+  }
+
+  const unique = isUnique.value ? 'UNIQUE ' : ''
+  const name = indexName.value.trim() || 'idx_name'
+  const typeStr = indexType.value && indexType.value !== 'btree' ? ` USING ${indexType.value.toUpperCase()}` : ''
+  const cols = selectedColumns.value.length > 0 ? selectedColumns.value.map(c => `"${c}"`).join(', ') : 'column_name'
+  const where = indexWhere.value.trim() ? ` WHERE ${indexWhere.value.trim()}` : ''
+  return `${dropDdl}CREATE ${unique}INDEX "${name}" ON "${schema}"."${table}"${typeStr} (${cols})${where};`
+})
+
+watch(liveDdl, (newDdl) => {
+  if (indexPreviewEditor) {
+    const transaction = indexPreviewEditor.state.update({
+      changes: { from: 0, to: indexPreviewEditor.state.doc.length, insert: newDdl }
+    })
+    indexPreviewEditor.dispatch(transaction)
+  }
+})
 
 // Context Menu State
 const showContextMenu = ref(false)
@@ -870,11 +1191,236 @@ async function confirmDropColumn(col: any) {
   }
 }
 
+async function initIndexPreviewEditor() {
+  if (indexPreviewEditor) return
+  
+  await nextTick()
+  if (indexPreviewContainer.value) {
+    const { EditorView, lineNumbers, highlightSpecialChars, drawSelection } = await import('@codemirror/view')
+    const { syntaxHighlighting, HighlightStyle } = await import('@codemirror/language')
+    const { tags } = await import('@lezer/highlight')
+    const { sql: sqlLang } = await import('@codemirror/lang-sql')
+    const { EditorState } = await import('@codemirror/state')
+
+    const darculaHighlightStyle = HighlightStyle.define([
+      { tag: tags.keyword, color: '#CC7832', fontWeight: 'bold' },
+      { tag: tags.modifier, color: '#CC7832', fontWeight: 'bold' },
+      { tag: tags.string, color: '#6A8759' },
+      { tag: tags.number, color: '#6897BB' },
+      { tag: tags.integer, color: '#6897BB' },
+      { tag: tags.float, color: '#6897BB' },
+      { tag: tags.comment, color: '#808080', fontStyle: 'italic' },
+      { tag: tags.lineComment, color: '#808080', fontStyle: 'italic' },
+      { tag: tags.blockComment, color: '#808080', fontStyle: 'italic' },
+      { tag: tags.variableName, color: '#A9B7C6' },
+      { tag: tags.propertyName, color: '#A9B7C6' },
+      { tag: tags.name, color: '#A9B7C6' },
+      { tag: tags.operator, color: '#A9B7C6' },
+      { tag: tags.punctuation, color: '#A9B7C6' },
+      { tag: tags.bool, color: '#CC7832', fontWeight: 'bold' },
+    ])
+
+    const darkTheme = EditorView.theme({
+      '&': {
+        backgroundColor: '#121212',
+        color: '#A9B7C6',
+        height: '100%',
+      },
+      '.cm-scroller': {
+        fontFamily: "'DM Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+        fontSize: '13px',
+        lineHeight: '20px',
+      },
+      '.cm-gutters': {
+        backgroundColor: '#0C0C0C',
+        color: '#858585',
+        borderRight: '1px solid #202020',
+      }
+    })
+
+    const state = EditorState.create({
+      doc: liveDdl.value,
+      extensions: [
+        lineNumbers(),
+        highlightSpecialChars(),
+        drawSelection(),
+        syntaxHighlighting(darculaHighlightStyle),
+        sqlLang(),
+        darkTheme,
+        EditorState.readOnly.of(true),
+        EditorView.editable.of(false)
+      ]
+    })
+
+    indexPreviewEditor = new EditorView({
+      state,
+      parent: indexPreviewContainer.value
+    })
+  }
+}
+
+function destroyIndexPreviewEditor() {
+  if (indexPreviewEditor) {
+    indexPreviewEditor.destroy()
+    indexPreviewEditor = null
+  }
+}
+
+async function loadIndexes() {
+  const connId = props.tab.connectionId || connectionsStore.currentConnectionId
+  if (!connId || !props.tab.table) return
+
+  loadingIndexes.value = true
+  try {
+    const schema = props.tab.schema || 'public'
+    const table = props.tab.table
+    const idxs = await App.GetIndexes(connId, schema, table)
+    indexesList.value = idxs
+  } catch (err: any) {
+    console.error('Failed to load indexes:', err)
+  } finally {
+    loadingIndexes.value = false
+  }
+}
+
+function editIndex(idx: any) {
+  editingIndexName.value = idx.index_name
+  indexName.value = idx.index_name
+  isNameManual.value = true
+  isUnique.value = idx.is_unique
+  indexType.value = idx.index_type || 'btree'
+  
+  // Format the column names from index to check against column names (unquoting if they have double quotes)
+  selectedColumns.value = idx.columns.map((c: string) => c.replace(/^"|"$/g, ''))
+  indexWhere.value = extractWhereClause(idx.definition)
+}
+
+function cancelEdit() {
+  editingIndexName.value = null
+  isNameManual.value = false
+  selectedColumns.value = []
+  isUnique.value = false
+  indexType.value = 'btree'
+  indexWhere.value = ''
+  indexName.value = autoIndexName.value
+}
+
+async function handleDropIndex(targetIndexName: string) {
+  if (!confirm(`Are you sure you want to drop index "${targetIndexName}"? This action cannot be undone.`)) return
+
+  const connId = props.tab.connectionId || connectionsStore.currentConnectionId
+  if (!connId) return
+
+  const schema = props.tab.schema || 'public'
+  try {
+    await App.DropIndex(connId, `"${schema}"."${targetIndexName}"`)
+    uiStore.addNotification({
+      type: 'success',
+      title: 'Index Dropped',
+      message: `Index "${targetIndexName}" dropped successfully.`
+    })
+    if (editingIndexName.value === targetIndexName) {
+      cancelEdit()
+    }
+    loadIndexes()
+  } catch (err: any) {
+    uiStore.addNotification({
+      type: 'error',
+      title: 'Drop Failed',
+      message: err.message || String(err)
+    })
+  }
+}
+
+async function handleCreateIndex() {
+  const connId = props.tab.connectionId || connectionsStore.currentConnectionId
+  if (!connId || !props.tab.table) return
+
+  if (selectedColumns.value.length === 0) {
+    uiStore.addNotification({
+      type: 'error',
+      title: 'Validation Error',
+      message: 'Please select at least one column for the index.'
+    })
+    return
+  }
+
+  const name = indexName.value.trim()
+  if (!name) {
+    uiStore.addNotification({
+      type: 'error',
+      title: 'Validation Error',
+      message: 'Index name is required.'
+    })
+    return
+  }
+
+  creatingIndex.value = true
+  try {
+    const schema = props.tab.schema || 'public'
+    const table = props.tab.table
+
+    // If editing, drop the old index first
+    if (editingIndexName.value) {
+      await App.DropIndex(connId, `"${schema}"."${editingIndexName.value}"`)
+    }
+
+    const fullTableName = `"${schema}"."${table}"`
+    const quotedCols = selectedColumns.value.map(c => `"${c}"`)
+
+    const indexDef = {
+      name: `"${name}"`,
+      table_name: fullTableName,
+      columns: quotedCols,
+      is_unique: isUnique.value,
+      index_type: indexType.value,
+      where: indexWhere.value.trim() || undefined
+    }
+
+    await App.CreateIndex(connId, indexDef)
+
+    uiStore.addNotification({
+      type: 'success',
+      title: editingIndexName.value ? 'Index Updated' : 'Index Created',
+      message: editingIndexName.value 
+        ? `Successfully updated index "${editingIndexName.value}"`
+        : `Successfully created index "${name}"`
+    })
+
+    cancelEdit()
+    loadIndexes()
+    
+    // Navigate back to columns tab
+    activeTab.value = 'columns'
+  } catch (err: any) {
+    uiStore.addNotification({
+      type: 'error',
+      title: 'Failed to Save Index',
+      message: err.message || String(err)
+    })
+  } finally {
+    creatingIndex.value = false
+  }
+}
+
+function copyIndexDdl() {
+  navigator.clipboard.writeText(liveDdl.value)
+  uiStore.addNotification({
+    type: 'info',
+    title: 'Copied',
+    message: 'Index SQL copied to clipboard'
+  })
+}
+
 onMounted(() => {
   document.addEventListener('click', closeContextMenu)
   window.addEventListener('keydown', handleKeyDown)
   console.log('DDLView mounted for table:', props.tab.table)
   loadColumns()
+  indexName.value = autoIndexName.value
+  if (activeTab.value === 'create-index') {
+    loadIndexes()
+  }
 })
 
 onUnmounted(() => {
@@ -884,12 +1430,16 @@ onUnmounted(() => {
     tabulator.destroy()
   }
   destroyDdlEditor()
+  destroyIndexPreviewEditor()
 })
 
 watch(activeTab, (newTab) => {
   console.log('DDLView activeTab changed to:', newTab)
   if (newTab === 'ddl') {
     loadDDL()
+  } else if (newTab === 'create-index') {
+    loadIndexes()
+    initIndexPreviewEditor()
   } else {
     loadColumns()
   }
@@ -899,6 +1449,10 @@ watch(() => props.tab, () => {
   console.log('DDLView props.tab changed:', props.tab.table)
   if (activeTab.value === 'ddl') {
     loadDDL()
+  } else if (activeTab.value === 'create-index') {
+    cancelEdit()
+    loadIndexes()
+    initIndexPreviewEditor()
   } else {
     loadColumns()
   }

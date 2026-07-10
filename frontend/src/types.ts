@@ -239,7 +239,7 @@ export interface FKReference {
 export interface Tab {
   id: string
   title: string
-  type: 'query' | 'table' | 'builder' | 'ddl' | 'home' | 'log' | 'backup'
+  type: 'query' | 'table' | 'builder' | 'ddl' | 'home' | 'log' | 'backup' | 'referential'
   connectionId?: string
   schema?: string
   table?: string
