@@ -126,33 +126,99 @@
             </div>
 
             <!-- SVG Joins and Connections Rendering Layer -->
-            <svg class="absolute inset-0 pointer-events-none w-full h-full z-10">
+            <svg class="absolute inset-0 pointer-events-none w-full h-full z-[25]">
+              <defs>
+                <linearGradient id="neon-line-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#00f2fe" />
+                  <stop offset="50%" stop-color="#00c9a7" />
+                  <stop offset="100%" stop-color="#10b981" />
+                </linearGradient>
+                
+                <filter id="neon-line-glow" x="-50%" y="-50%" width="200%" height="200%">
+                  <feGaussianBlur stdDeviation="2"/>
+                </filter>
+
+                <filter id="temp-line-glow" x="-50%" y="-50%" width="200%" height="200%">
+                  <feGaussianBlur stdDeviation="1.5"/>
+                </filter>
+              </defs>
+
               <!-- Saved Connections -->
-              <g v-for="join in joins" :key="join.id">
+              <g v-for="join in joins" :key="join.id" class="connection-group">
                 <template v-if="getJoinAnchors(join)">
+                  <!-- Invisible wider path for easy hover/interaction -->
                   <path
-                    :d="getBezierPath(
+                    :d="getOrthogonalPath(
                       getJoinAnchors(join)!.from.x,
                       getJoinAnchors(join)!.from.y,
                       getJoinAnchors(join)!.to.x,
                       getJoinAnchors(join)!.to.y
                     )"
                     fill="none"
-                    stroke="#00c9a7"
-                    stroke-width="2.5"
-                    class="drop-shadow-[0_0_4px_rgba(0,201,167,0.4)]"
+                    stroke="transparent"
+                    stroke-width="10"
+                    class="pointer-events-auto cursor-pointer"
                   />
+
+                  <!-- Glow backing path (for soft neon glow behind the line) -->
+                  <path
+                    :d="getOrthogonalPath(
+                      getJoinAnchors(join)!.from.x,
+                      getJoinAnchors(join)!.from.y,
+                      getJoinAnchors(join)!.to.x,
+                      getJoinAnchors(join)!.to.y
+                    )"
+                    fill="none"
+                    stroke="url(#neon-line-gradient)"
+                    stroke-width="3.5"
+                    filter="url(#neon-line-glow)"
+                    opacity="0.35"
+                  />
+                  <!-- Sharp foreground path (thin, clear gradient) -->
+                  <path
+                    :d="getOrthogonalPath(
+                      getJoinAnchors(join)!.from.x,
+                      getJoinAnchors(join)!.from.y,
+                      getJoinAnchors(join)!.to.x,
+                      getJoinAnchors(join)!.to.y
+                    )"
+                    fill="none"
+                    stroke="url(#neon-line-gradient)"
+                    stroke-width="1.6"
+                  />
+                  
+                  <!-- Start Glowing Dot -->
+                  <circle
+                    :cx="getJoinAnchors(join)!.from.x"
+                    :cy="getJoinAnchors(join)!.from.y"
+                    r="3.5"
+                    fill="#ffffff"
+                    stroke="#00f2fe"
+                    stroke-width="1.2"
+                    style="filter: drop-shadow(0 0 3px #00f2fe);"
+                  />
+                  <!-- End Glowing Dot -->
+                  <circle
+                    :cx="getJoinAnchors(join)!.to.x"
+                    :cy="getJoinAnchors(join)!.to.y"
+                    r="3.5"
+                    fill="#ffffff"
+                    stroke="#10b981"
+                    stroke-width="1.2"
+                    style="filter: drop-shadow(0 0 3px #10b981);"
+                  />
+
                   <!-- Midpoint Delete Button -->
                   <foreignObject
                     :x="getMidpoint(getJoinAnchors(join)!.from.x, getJoinAnchors(join)!.to.x) - 10"
                     :y="getMidpoint(getJoinAnchors(join)!.from.y, getJoinAnchors(join)!.to.y) - 10"
                     width="20"
                     height="20"
-                    class="pointer-events-auto"
+                    class="pointer-events-auto delete-btn-wrapper"
                   >
                     <button
                       @click="removeJoin(join.id)"
-                      class="w-5 h-5 flex items-center justify-center bg-accent-red text-white rounded-full border border-navy-primary shadow hover:scale-110 transition-transform cursor-pointer"
+                      class="delete-btn-neon"
                       title="Remove JOIN"
                     >
                       <svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
@@ -164,20 +230,51 @@
               </g>
 
               <!-- Temporary Connection Line when dragging -->
-              <path
-                v-if="dragStartAnchor && dragStartAnchorPos"
-                :d="getBezierPath(
-                  dragStartAnchorPos.x,
-                  dragStartAnchorPos.y,
-                  tempLineEnd.x,
-                  tempLineEnd.y
-                )"
-                fill="none"
-                stroke="#fbbf24"
-                stroke-width="2"
-                stroke-dasharray="4"
-                class="drop-shadow-[0_0_3px_rgba(251,191,36,0.5)]"
-              />
+              <g v-if="dragStartAnchor && dragStartAnchorPos">
+                <path
+                  :d="getOrthogonalPath(
+                    dragStartAnchorPos.x,
+                    dragStartAnchorPos.y,
+                    tempLineEnd.x,
+                    tempLineEnd.y
+                  )"
+                  fill="none"
+                  stroke="#fbbf24"
+                  stroke-width="3"
+                  filter="url(#temp-line-glow)"
+                  opacity="0.3"
+                />
+                <path
+                  :d="getOrthogonalPath(
+                    dragStartAnchorPos.x,
+                    dragStartAnchorPos.y,
+                    tempLineEnd.x,
+                    tempLineEnd.y
+                  )"
+                  fill="none"
+                  stroke="#fbbf24"
+                  stroke-width="1.4"
+                  stroke-dasharray="3"
+                />
+                <circle
+                  :cx="dragStartAnchorPos.x"
+                  :cy="dragStartAnchorPos.y"
+                  r="3.5"
+                  fill="#ffffff"
+                  stroke="#fbbf24"
+                  stroke-width="1.2"
+                  style="filter: drop-shadow(0 0 3px #fbbf24);"
+                />
+                <circle
+                  :cx="tempLineEnd.x"
+                  :cy="tempLineEnd.y"
+                  r="3.5"
+                  fill="#ffffff"
+                  stroke="#fbbf24"
+                  stroke-width="1.2"
+                  style="filter: drop-shadow(0 0 3px #fbbf24);"
+                />
+              </g>
             </svg>
 
             <!-- Table Schema Nodes -->
@@ -1278,6 +1375,35 @@ function getBezierPath(x1: number, y1: number, x2: number, y2: number) {
   return `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`
 }
 
+function getOrthogonalPath(x1: number, y1: number, x2: number, y2: number) {
+  const x_mid = x1 + (x2 - x1) / 2
+  const dx = x2 - x1
+  const dy = y2 - y1
+  const sx = Math.sign(dx)
+  const sy = Math.sign(dy)
+  // Ensure corner radius matches space available, max 10px
+  const current_r = Math.min(10, Math.abs(dx) / 2, Math.abs(dy) / 2)
+
+  if (current_r <= 0) {
+    return `M ${x1} ${y1} L ${x2} ${y2}`
+  }
+
+  const p0_x = x1
+  const p0_y = y1
+  const p1_x = x_mid - sx * current_r
+  const p1_y = y1
+  const p2_x = x_mid
+  const p2_y = y1 + sy * current_r
+  const p3_x = x_mid
+  const p3_y = y2 - sy * current_r
+  const p4_x = x_mid + sx * current_r
+  const p4_y = y2
+  const p5_x = x2
+  const p5_y = y2
+
+  return `M ${p0_x} ${p0_y} L ${p1_x} ${p1_y} Q ${x_mid} ${y1} ${p2_x} ${p2_y} L ${p3_x} ${p3_y} Q ${x_mid} ${y2} ${p4_x} ${p4_y} L ${p5_x} ${p5_y}`
+}
+
 function getMidpoint(val1: number, val2: number) {
   return val1 + (val2 - val1) / 2
 }
@@ -1418,6 +1544,41 @@ onUnmounted(() => {
               0 0 22px rgba(0, 255, 255, 0.4),
               0 0 35px rgba(168, 85, 247, 0.25),
               inset 0 0 20px rgba(0, 255, 255, 0.1);
+}
+
+/* Show connection delete button only on hover */
+.connection-group .delete-btn-wrapper {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.connection-group:hover .delete-btn-wrapper {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Neon Delete Button styling */
+.delete-btn-neon {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #090d16;
+  border: 1px solid #ef4444;
+  border-radius: 50%;
+  color: #ef4444;
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.5), inset 0 0 4px rgba(239, 68, 68, 0.2);
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.delete-btn-neon:hover {
+  background-color: #ef4444;
+  color: #ffffff;
+  box-shadow: 0 0 15px rgba(239, 68, 68, 0.9);
+  transform: scale(1.15);
 }
 
 /* Scroller visual aesthetic overrides */
