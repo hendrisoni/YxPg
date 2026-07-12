@@ -81,10 +81,24 @@
         >
           <div class="w-2 h-2 rounded-full flex-shrink-0" :style="{ backgroundColor: conn.color || '#00C9A7' }"></div>
           <div class="flex-1 min-w-0">
-            <div class="text-xs font-semibold text-text-primary">{{ conn.name }}</div>
+            <div class="flex items-center gap-1.5">
+              <span class="text-xs font-semibold text-text-primary">{{ conn.name }}</span>
+              <svg v-if="defaultConnectionId === conn.id" class="w-3.5 h-3.5 text-accent-amber fill-current flex-shrink-0" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" title="Default Connection">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+              </svg>
+            </div>
             <div class="text-[10px] text-text-muted mt-0.5">{{ conn.host }}:{{ conn.port }}/{{ conn.database }}</div>
           </div>
           <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <button
+              @click.stop="toggleDefault(conn.id)"
+              class="p-1 rounded hover:bg-navy-tertiary text-text-muted hover:text-accent-amber transition-colors"
+              :title="defaultConnectionId === conn.id ? 'Remove Default' : 'Set as Default'"
+            >
+              <svg class="w-3.5 h-3.5" :class="defaultConnectionId === conn.id ? 'fill-current text-accent-amber' : ''" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+              </svg>
+            </button>
             <button
               @click.stop="handleTest(conn)"
               class="p-1 rounded hover:bg-navy-tertiary text-text-muted hover:text-accent-blue transition-colors"
@@ -169,6 +183,27 @@ const editingConnection = ref<Connection | null>(null)
 const testResults = ref<Record<string, ConnectionTestResult>>({})
 const syncing = ref(false)
 const syncingPgAdmin = ref(false)
+const defaultConnectionId = ref<string | null>(localStorage.getItem('connections:default_connection_id'))
+
+function toggleDefault(id: string) {
+  if (defaultConnectionId.value === id) {
+    defaultConnectionId.value = null
+    localStorage.removeItem('connections:default_connection_id')
+    uiStore.addNotification({
+      type: 'info',
+      title: 'Default Cleared',
+      message: 'Default connection has been cleared.'
+    })
+  } else {
+    defaultConnectionId.value = id
+    localStorage.setItem('connections:default_connection_id', id)
+    uiStore.addNotification({
+      type: 'success',
+      title: 'Default Set',
+      message: 'Connection successfully set as default.'
+    })
+  }
+}
 
 function handleNewConnection() {
   editingConnection.value = null
@@ -227,8 +262,17 @@ async function handleSyncPgAdmin() {
   }
 }
 
-onMounted(() => {
-  connectionsStore.loadConnections()
+onMounted(async () => {
+  await connectionsStore.loadConnections()
+  
+  // Auto-connect to default connection on startup
+  if (defaultConnectionId.value && !connectionsStore.hasAutoConnected) {
+    const conn = connectionsStore.connections.find(c => c.id === defaultConnectionId.value)
+    if (conn) {
+      connectionsStore.hasAutoConnected = true
+      await handleConnect(conn)
+    }
+  }
 })
 
 async function handleConnect(conn: Connection) {
@@ -262,6 +306,10 @@ async function handleTest(conn: Connection) {
 
 async function handleDelete(conn: Connection) {
   await connectionsStore.deleteConnection(conn.id)
+  if (defaultConnectionId.value === conn.id) {
+    defaultConnectionId.value = null
+    localStorage.removeItem('connections:default_connection_id')
+  }
   uiStore.addNotification({
     type: 'success',
     title: 'Deleted',

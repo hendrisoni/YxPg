@@ -184,8 +184,8 @@
             <div
               v-for="table in tables"
               :key="table.id"
-              class="absolute select-none bg-[#090d16] border border-[#202e42] rounded-lg shadow-xl z-20 flex flex-col max-h-[300px] overflow-hidden"
-              :class="{ 'border-teal-accent': activeTableId === table.id }"
+              class="absolute select-none rounded-lg z-20 flex flex-col max-h-[300px] overflow-hidden schema-table-card"
+              :class="{ 'active-node': activeTableId === table.id }"
               :style="{ left: table.x + 'px', top: table.y + 'px', zIndex: table.zIndex, width: (table.width || 260) + 'px' }"
               @mousedown="focusTable(table.id)"
             >
@@ -1393,6 +1393,33 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+.schema-table-card {
+  background: linear-gradient(#090d16, #090d16) padding-box,
+              linear-gradient(135deg, rgba(6, 182, 212, 0.4) 0%, rgba(59, 130, 246, 0.25) 50%, rgba(168, 85, 247, 0.15) 100%) border-box;
+  border: 1px solid transparent;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.6), 
+              0 0 12px rgba(6, 182, 212, 0.08),
+              inset 0 0 12px rgba(6, 182, 212, 0.02);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.schema-table-card:hover {
+  background: linear-gradient(#090d16, #090d16) padding-box,
+              linear-gradient(135deg, rgba(6, 182, 212, 0.7) 0%, rgba(59, 130, 246, 0.45) 50%, rgba(168, 85, 247, 0.3) 100%) border-box;
+  box-shadow: 0 8px 25px -2px rgba(0, 0, 0, 0.7), 
+              0 0 16px rgba(6, 182, 212, 0.22),
+              inset 0 0 15px rgba(6, 182, 212, 0.05);
+}
+
+.schema-table-card.active-node {
+  background: linear-gradient(#090d16, #090d16) padding-box,
+              linear-gradient(135deg, #00ffff 0%, #3b82f6 50%, #a855f7 100%) border-box;
+  box-shadow: 0 12px 30px -4px rgba(0, 0, 0, 0.8), 
+              0 0 22px rgba(0, 255, 255, 0.4),
+              0 0 35px rgba(168, 85, 247, 0.25),
+              inset 0 0 20px rgba(0, 255, 255, 0.1);
+}
+
 /* Scroller visual aesthetic overrides */
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;

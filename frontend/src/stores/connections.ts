@@ -16,6 +16,7 @@ export const useConnectionsStore = defineStore('connections', () => {
   const currentConnectionId = ref<string | null>(null)
   const loading = ref(false)
   const error = ref<string | null>(null)
+  const hasAutoConnected = ref(false)
 
   const currentConnection = computed(() => {
     if (!currentConnectionId.value) return null
@@ -144,6 +145,7 @@ export const useConnectionsStore = defineStore('connections', () => {
     isConnected,
     loading,
     error,
+    hasAutoConnected,
     loadConnections,
     addConnection,
     updateConnection,
