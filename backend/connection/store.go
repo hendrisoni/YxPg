@@ -73,14 +73,15 @@ func (s *Store) List() []models.Connection {
 	return s.Connections
 }
 
-// Get returns a connection by ID
+// Get returns a connection by ID (returns a copy to avoid race conditions)
 func (s *Store) Get(id string) (*models.Connection, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
 	for i := range s.Connections {
 		if s.Connections[i].ID == id {
-			return &s.Connections[i], nil
+			connCopy := s.Connections[i]
+			return &connCopy, nil
 		}
 	}
 

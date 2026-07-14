@@ -148,34 +148,28 @@ func (e *Executor) ExecuteRaw(ctx context.Context, connID, sql string) error {
 
 // buildCreateTableDDL generates CREATE TABLE DDL from a definition
 func (e *Executor) buildCreateTableDDL(def models.TableDefinition) string {
-	var sb strings.Builder
+	var parts []string
 
-	sb.WriteString(fmt.Sprintf("CREATE TABLE %s.%s (\n", def.Schema, def.TableName))
-
-	for i, col := range def.Columns {
-		sb.WriteString(fmt.Sprintf("    %s %s", col.Name, col.DataType))
+	for _, col := range def.Columns {
+		colStr := fmt.Sprintf("    %s %s", col.Name, col.DataType)
 
 		if col.Length != nil {
-			sb.WriteString(fmt.Sprintf("(%d)", *col.Length))
+			colStr += fmt.Sprintf("(%d)", *col.Length)
 		}
 
 		if !col.IsNullable {
-			sb.WriteString(" NOT NULL")
+			colStr += " NOT NULL"
 		}
 
 		if col.DefaultValue != "" {
-			sb.WriteString(fmt.Sprintf(" DEFAULT %s", col.DefaultValue))
+			colStr += fmt.Sprintf(" DEFAULT %s", col.DefaultValue)
 		}
 
 		if col.IsUnique {
-			sb.WriteString(" UNIQUE")
+			colStr += " UNIQUE"
 		}
 
-		if i < len(def.Columns)-1 || len(def.Indexes) > 0 || len(def.ForeignKeys) > 0 {
-			sb.WriteString(",\n")
-		} else {
-			sb.WriteString("\n")
-		}
+		parts = append(parts, colStr)
 	}
 
 	// Add primary key constraint
@@ -186,13 +180,11 @@ func (e *Executor) buildCreateTableDDL(def models.TableDefinition) string {
 		}
 	}
 	if len(pkCols) > 0 {
-		sb.WriteString(fmt.Sprintf("    CONSTRAINT %s_pkey PRIMARY KEY (%s),\n",
+		parts = append(parts, fmt.Sprintf("    CONSTRAINT %s_pkey PRIMARY KEY (%s)",
 			def.TableName, strings.Join(pkCols, ", ")))
 	}
 
-	sb.WriteString(");")
-
-	return sb.String()
+	return fmt.Sprintf("CREATE TABLE %s.%s (\n%s\n);", def.Schema, def.TableName, strings.Join(parts, ",\n"))
 }
 
 // buildCreateIndexDDL generates CREATE INDEX DDL

@@ -17,38 +17,32 @@ func NewBuilder() *Builder {
 
 // BuildCreateTable builds a CREATE TABLE statement
 func (b *Builder) BuildCreateTable(def models.TableDefinition) string {
-	var sb strings.Builder
+	var parts []string
 
-	sb.WriteString(fmt.Sprintf("CREATE TABLE %s.%s (\n", def.Schema, def.TableName))
-
-	for i, col := range def.Columns {
-		sb.WriteString(fmt.Sprintf("    %s %s", col.Name, col.DataType))
+	for _, col := range def.Columns {
+		colStr := fmt.Sprintf("    %s %s", col.Name, col.DataType)
 
 		if col.Length != nil {
-			sb.WriteString(fmt.Sprintf("(%d)", *col.Length))
+			colStr += fmt.Sprintf("(%d)", *col.Length)
 		}
 
 		if !col.IsNullable {
-			sb.WriteString(" NOT NULL")
+			colStr += " NOT NULL"
 		}
 
 		if col.DefaultValue != "" {
-			sb.WriteString(fmt.Sprintf(" DEFAULT %s", col.DefaultValue))
+			colStr += fmt.Sprintf(" DEFAULT %s", col.DefaultValue)
 		}
 
 		if col.IsUnique {
-			sb.WriteString(" UNIQUE")
+			colStr += " UNIQUE"
 		}
 
 		if col.Comment != "" {
-			sb.WriteString(fmt.Sprintf(" -- %s", col.Comment))
+			colStr += fmt.Sprintf(" -- %s", col.Comment)
 		}
 
-		if i < len(def.Columns)-1 {
-			sb.WriteString(",\n")
-		} else {
-			sb.WriteString("\n")
-		}
+		parts = append(parts, colStr)
 	}
 
 	// Primary key
@@ -59,13 +53,11 @@ func (b *Builder) BuildCreateTable(def models.TableDefinition) string {
 		}
 	}
 	if len(pkCols) > 0 {
-		sb.WriteString(fmt.Sprintf("    CONSTRAINT %s_pkey PRIMARY KEY (%s)\n",
+		parts = append(parts, fmt.Sprintf("    CONSTRAINT %s_pkey PRIMARY KEY (%s)",
 			def.TableName, strings.Join(pkCols, ", ")))
 	}
 
-	sb.WriteString(");")
-
-	return sb.String()
+	return fmt.Sprintf("CREATE TABLE %s.%s (\n%s\n);", def.Schema, def.TableName, strings.Join(parts, ",\n"))
 }
 
 // BuildAlterTable builds ALTER TABLE statements
