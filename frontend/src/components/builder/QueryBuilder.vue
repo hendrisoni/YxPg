@@ -632,7 +632,12 @@
 
       <!-- RESULTS TAB -->
       <div v-show="currentTab === 'Results'" class="flex-1 flex flex-col overflow-hidden">
-        <ResultGrid :result="queryResult" :tab="tab" />
+        <ResultGrid
+          :result="queryResult"
+          :tab="tab"
+          :query-sql="generatedSQL"
+          :query-connection-id="tab.connectionId || connectionsStore.currentConnectionId"
+        />
       </div>
     </div>
   </div>
@@ -1440,16 +1445,20 @@ async function runQuery() {
   isRunning.value = true
   try {
     const bindings = connectionsStore.getWailsBindings()
-    const result = await bindings.ExecuteQuery(
+    // Use paged execution to avoid loading all rows at once
+    const result = await (bindings as any).ExecuteQueryPaged(
       connId,
       generatedSQL.value,
+      1,
+      200,
       30
     )
     queryResult.value = result
     if (result.error) {
       uiStore.addNotification({ type: 'error', title: 'Query Error', message: result.error })
     } else {
-      uiStore.addNotification({ type: 'success', title: 'Success', message: `${result.row_count} rows returned` })
+      const totalInfo = result.total_count ? ` (total: ${result.total_count})` : ''
+      uiStore.addNotification({ type: 'success', title: 'Success', message: `${result.row_count} rows loaded${totalInfo}` })
       currentTab.value = 'Results'
     }
   } catch (e: any) {

@@ -70,6 +70,10 @@ export function ExecuteQuery(arg1, arg2, arg3) {
   return window['go']['main']['App']['ExecuteQuery'](arg1, arg2, arg3);
 }
 
+export function ExecuteQueryPaged(arg1, arg2, arg3, arg4, arg5) {
+  return window['go']['main']['App']['ExecuteQueryPaged'](arg1, arg2, arg3, arg4, arg5);
+}
+
 export function ExecuteRawDDL(arg1, arg2) {
   return window['go']['main']['App']['ExecuteRawDDL'](arg1, arg2);
 }

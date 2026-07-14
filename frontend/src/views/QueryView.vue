@@ -169,7 +169,13 @@
             </div>
 
             <div class="flex-1 min-h-0 overflow-hidden relative">
-              <ResultGrid :result="res" :executed-sql="res.raw_sql || lastExecutedSql" @refresh="runQuery" />
+              <ResultGrid
+                :result="res"
+                :executed-sql="res.raw_sql || lastExecutedSql"
+                :query-sql="res.total_count > 0 ? (res.raw_sql || lastExecutedSql) : undefined"
+                :query-connection-id="tab.connectionId || connectionsStore.currentConnectionId"
+                @refresh="runQuery"
+              />
             </div>
           </div>
         </div>
@@ -836,8 +842,16 @@ async function runQuery(customSql?: string | MouseEvent) {
         results.value = resArray
       }
     } else {
-      const result = await bindings.ExecuteQuery(connId, sql, 30)
-      results.value = [result]
+      // For single SELECT queries, use paged execution to avoid loading all rows at once
+      const isSelect = /^\s*(SELECT|WITH)\b/i.test(trimmedSql)
+      if (isSelect && (bindings as any).ExecuteQueryPaged) {
+        const result = await (bindings as any).ExecuteQueryPaged(connId, sql, 1, 200, 30)
+        result.raw_sql = sql
+        results.value = [result]
+      } else {
+        const result = await bindings.ExecuteQuery(connId, sql, 30)
+        results.value = [result]
+      }
     }
 
     // Detect if a table was created and add it to the workspace tree

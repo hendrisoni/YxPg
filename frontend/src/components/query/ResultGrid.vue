@@ -110,8 +110,9 @@
           </button>
         </div>
 
-        <div>
-          <span v-if="tab?.type === 'table'">Showing {{ displayedCount }} of {{ totalRows }} rows</span>
+        <div class="flex items-center gap-2">
+          <span v-if="result && result.duration_ms !== undefined && result.duration_ms !== null" class="text-text-muted font-mono">[{{ result.duration_ms }}ms]</span>
+          <span v-if="tab?.type === 'table' || querySql">Showing {{ displayedCount }} of {{ totalRows }} rows</span>
           <span v-else>{{ result.row_count }} rows</span>
         </div>
       </div>
@@ -148,6 +149,8 @@ const props = defineProps<{
   result: QueryResult | null
   tab?: Tab
   executedSql?: string
+  querySql?: string
+  queryConnectionId?: string
 }>()
 
 const emit = defineEmits(['refresh'])
@@ -624,8 +627,55 @@ async function renderTable(result: QueryResult) {
         data: transformedData
       }
     }
+  } else if (props.querySql) {
+    // Server-side progressive load for query results
+    const queryConnId = props.queryConnectionId || connectionsStore.currentConnectionId
+    totalRows.value = result.total_count || result.row_count
+
+    tableConfig.ajaxURL = "wails://ExecuteQueryPaged"
+    tableConfig.progressiveLoad = "scroll"
+    tableConfig.progressiveLoadScrollMargin = 350
+    tableConfig.paginationSize = 200
+
+    tableConfig.ajaxRequestFunc = async (url: string, config: any, params: any) => {
+      const page = params.page || 1
+      const size = params.size || 200
+      if (!queryConnId) {
+        return { columns: [], rows: [], row_count: 0, total_count: 0 }
+      }
+      const bindings = connectionsStore.getWailsBindings()
+      return await (bindings as any).ExecuteQueryPaged(
+        queryConnId,
+        props.querySql,
+        page,
+        size,
+        30
+      )
+    }
+
+    tableConfig.ajaxResponse = (url: string, params: any, response: any) => {
+      if (!response || response.error) {
+        throw new Error(response?.error || 'Failed to fetch data')
+      }
+      if (response.total_count) {
+        totalRows.value = response.total_count
+      }
+
+      const transformedData = response.rows.map((row: any[]) => {
+        const rowData: Record<string, any> = {}
+        row.forEach((val: any, colIdx: number) => {
+          rowData[`col_${colIdx}`] = val
+        })
+        return rowData
+      })
+
+      return {
+        last_page: Math.max(1, Math.ceil((response.total_count || 0) / 200)),
+        data: transformedData
+      }
+    }
   } else {
-    // Local data mode for queries
+    // Local data mode for small queries without querySql prop
     const localData = result.rows.map((row) => {
       const rowData: Record<string, any> = {}
       row.forEach((val, colIdx) => {
@@ -642,8 +692,8 @@ async function renderTable(result: QueryResult) {
   // Create table
   table = new TabulatorFull(tableContainer.value, tableConfig)
 
-  table.on('dataLoaded', () => {
-    displayedCount.value = table.getData().length
+  table.on('dataProcessed', () => {
+    displayedCount.value = table.getDataCount()
   })
 
   if (isTableTab) {

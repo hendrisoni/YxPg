@@ -3,6 +3,7 @@ package query
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"yxpg/backend/connection"
@@ -254,6 +255,67 @@ func (e *Executor) GetSavedQueries() ([]models.SavedQuery, error) {
 		return nil, nil
 	}
 	return e.history.ListSavedQueries()
+}
+
+// ExecutePaged runs a SQL query with server-side pagination (LIMIT/OFFSET)
+func (e *Executor) ExecutePaged(ctx context.Context, connID, sql string, page, pageSize, timeout int) models.QueryResult {
+	if timeout <= 0 {
+		timeout = 30
+	}
+	if page <= 0 {
+		page = 1
+	}
+	if pageSize <= 0 {
+		pageSize = 200
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, time.Duration(timeout)*time.Second)
+	defer cancel()
+
+	start := time.Now()
+
+	pool, err := e.manager.GetPool(connID)
+	if err != nil {
+		return models.QueryResult{
+			Error:    fmt.Sprintf("Connection not found: %v", err),
+			Duration: time.Since(start).Milliseconds(),
+		}
+	}
+
+	// Trim trailing semicolons and spaces from query to prevent subquery syntax errors
+	sql = strings.TrimSpace(sql)
+	for strings.HasSuffix(sql, ";") {
+		sql = strings.TrimSuffix(sql, ";")
+		sql = strings.TrimSpace(sql)
+	}
+
+	// Get total count first
+	countSQL := fmt.Sprintf("SELECT COUNT(*) FROM (%s) AS _paged_count", sql)
+	var totalCount int64
+	err = pool.QueryRow(ctx, countSQL).Scan(&totalCount)
+	if err != nil {
+		// If count fails, still try to execute the paginated query
+		totalCount = 0
+	}
+
+	// Execute paginated query
+	offset := (page - 1) * pageSize
+	pagedSQL := fmt.Sprintf("SELECT * FROM (%s) AS _paged_sub LIMIT %d OFFSET %d", sql, pageSize, offset)
+
+	rows, err := pool.Query(ctx, pagedSQL)
+	if err != nil {
+		duration := time.Since(start).Milliseconds()
+		return models.QueryResult{
+			Error:    err.Error(),
+			Duration: duration,
+		}
+	}
+	defer rows.Close()
+
+	result := connection.RowsToResult(rows, time.Since(start).Milliseconds())
+	result.TotalCount = totalCount
+
+	return result
 }
 
 // CancelQuery cancels an active query

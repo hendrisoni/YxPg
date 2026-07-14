@@ -38,6 +38,8 @@ export function ExecuteMultipleQueries(arg1:string,arg2:string,arg3:number):Prom
 
 export function ExecuteQuery(arg1:string,arg2:string,arg3:number):Promise<models.QueryResult>;
 
+export function ExecuteQueryPaged(arg1:string,arg2:string,arg3:number,arg4:number,arg5:number):Promise<models.QueryResult>;
+
 export function ExecuteRawDDL(arg1:string,arg2:string):Promise<void>;
 
 export function ExplainQuery(arg1:string,arg2:string):Promise<models.ExplainResult>;

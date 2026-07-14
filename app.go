@@ -258,6 +258,11 @@ func (a *App) ExecuteMultipleQueries(connID, sql string, timeout int) []models.Q
 	return a.executor.ExecuteMultiple(a.ctx, connID, sql, timeout)
 }
 
+// ExecuteQueryPaged executes a SQL query with server-side pagination (LIMIT/OFFSET)
+func (a *App) ExecuteQueryPaged(connID, sql string, page, pageSize, timeout int) models.QueryResult {
+	return a.executor.ExecutePaged(a.ctx, connID, sql, page, pageSize, timeout)
+}
+
 // CancelQuery cancels an active query
 func (a *App) CancelQuery(connID string) error {
 	return a.executor.CancelQuery(connID)
