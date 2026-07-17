@@ -127,8 +127,30 @@
     padding: 0.5rem 0.75rem !important;
   }
 
-  .tabulator .tabulator-tableholder {
-    background-color: transparent !important;
+  .tabulator .tabulator-tableholder,
+  .tabulator .tabulator-table {
+    background-color: var(--bg-primary) !important;
+  }
+
+  /* Tabulator loading overlay styling */
+  .tabulator .tabulator-loader {
+    background-color: rgba(5, 5, 5, 0.45) !important;
+    backdrop-filter: blur(1px) !important;
+  }
+
+  .tabulator .tabulator-loader .tabulator-loader-msg {
+    background-color: var(--bg-secondary) !important;
+    border: 1px solid var(--border) !important;
+    color: var(--text-secondary) !important;
+    font-size: 0.75rem !important;
+    font-weight: 500 !important;
+    padding: 0.5rem 1rem !important;
+    border-radius: 0.375rem !important;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5) !important;
+  }
+
+  .tabulator .tabulator-loader .tabulator-loader-msg.tabulator-loading {
+    border: 1px solid var(--border) !important;
   }
 
   .tabulator .tabulator-row {
