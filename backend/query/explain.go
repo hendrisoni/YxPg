@@ -69,7 +69,7 @@ func BrowseTable(ctx context.Context, manager *connection.Manager, connID, schem
 			case "IS NOT NULL":
 				query += fmt.Sprintf("%s IS NOT NULL", f.Column)
 			case "LIKE", "ILIKE":
-				query += fmt.Sprintf("%s %s '%%%s%%'", f.Column, f.Operator, f.Value)
+				query += fmt.Sprintf("CAST(%s AS text) %s '%%%s%%'", f.Column, f.Operator, f.Value)
 			case "IN":
 				query += fmt.Sprintf("%s IN (%s)", f.Column, f.Value)
 			default:
