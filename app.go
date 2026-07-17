@@ -420,6 +420,20 @@ func (a *App) StartBackup(opts export.BackupOptions) error {
 	return export.RunPgDump(a.ctx, *conn, opts)
 }
 
+// StartMaintenance begins the database maintenance process
+func (a *App) StartMaintenance(opts export.MaintenanceOptions) error {
+	conn, err := a.manager.GetConn(opts.ConnectionID)
+	if err != nil {
+		return fmt.Errorf("failed to retrieve connection: %w", err)
+	}
+	if conn == nil {
+		return fmt.Errorf("connection not found: %s", opts.ConnectionID)
+	}
+
+	return export.RunMaintenance(a.ctx, *conn, opts)
+}
+
+
 // OpenFolder opens the folder containing the specified path in the OS file explorer
 func (a *App) OpenFolder(path string) error {
 	fi, err := os.Stat(path)

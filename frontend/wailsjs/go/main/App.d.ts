@@ -112,6 +112,8 @@ export function SaveWorkspace(arg1:string):Promise<void>;
 
 export function StartBackup(arg1:export.BackupOptions):Promise<void>;
 
+export function StartMaintenance(arg1:export.MaintenanceOptions):Promise<void>;
+
 export function SyncPgAdminConnections():Promise<number>;
 
 export function SyncServerConnections():Promise<number>;

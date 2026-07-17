@@ -218,6 +218,10 @@ export function StartBackup(arg1) {
   return window['go']['main']['App']['StartBackup'](arg1);
 }
 
+export function StartMaintenance(arg1) {
+  return window['go']['main']['App']['StartMaintenance'](arg1);
+}
+
 export function SyncPgAdminConnections() {
   return window['go']['main']['App']['SyncPgAdminConnections']();
 }

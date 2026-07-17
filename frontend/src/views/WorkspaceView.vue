@@ -14,6 +14,7 @@
         @add-category="handleAddCategory"
         @open-referential="handleOpenReferential"
         @open-functions-triggers="handleOpenFunctionsTriggers"
+        @open-maintenance="handleOpenMaintenance"
       />
 
       <!-- Resize Handle -->
@@ -58,6 +59,11 @@
             v-else-if="tabsStore.activeTab.type === 'backup'"
             :tab="tabsStore.activeTab"
             :key="'backup-' + tabsStore.activeTab.id"
+          />
+          <MaintenanceView
+            v-else-if="tabsStore.activeTab.type === 'maintenance'"
+            :tab="tabsStore.activeTab"
+            :key="'maintenance-' + tabsStore.activeTab.id"
           />
           <ReferentialView
             v-else-if="tabsStore.activeTab.type === 'referential'"
@@ -147,6 +153,7 @@ import BuilderView from './BuilderView.vue'
 import DDLView from './DDLView.vue'
 import QueryLogView from './QueryLogView.vue'
 import BackupView from './BackupView.vue'
+import MaintenanceView from './MaintenanceView.vue'
 import ReferentialView from './ReferentialView.vue'
 import FunctionsTriggersView from './FunctionsTriggersView.vue'
 import { useWorkspaceStore } from '../stores/workspace'
@@ -254,6 +261,10 @@ function openQueryBuilder() {
 
 function handleOpenBackup() {
   tabsStore.createTab('backup', { title: 'Backup' })
+}
+
+function handleOpenMaintenance() {
+  tabsStore.createTab('maintenance', { title: 'Maintenance' })
 }
 
 function handleAddCategory() {

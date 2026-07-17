@@ -36,6 +36,30 @@ export namespace export {
 	        this.pg_bin_path = source["pg_bin_path"];
 	    }
 	}
+	export class MaintenanceOptions {
+	    connection_id: string;
+	    database: string;
+	    task: string;
+	    scope: string;
+	    schema_name: string;
+	    table_name: string;
+	    verbose: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new MaintenanceOptions(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.connection_id = source["connection_id"];
+	        this.database = source["database"];
+	        this.task = source["task"];
+	        this.scope = source["scope"];
+	        this.schema_name = source["schema_name"];
+	        this.table_name = source["table_name"];
+	        this.verbose = source["verbose"];
+	    }
+	}
 
 }
 

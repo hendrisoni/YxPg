@@ -75,6 +75,16 @@
           </svg>
         </button>
 
+        <!-- Maintenance Button -->
+        <button @click="$emit('openMaintenance')"
+          class="p-2 rounded-lg text-text-secondary hover:text-teal-accent hover:bg-navy-hover transition-colors cursor-pointer"
+          title="Database Maintenance (Vacuum & Reindex)">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+          </svg>
+        </button>
+
+
         <!-- Settings Button -->
         <button @click="$emit('openSettings')"
           class="p-2 rounded-lg text-text-secondary hover:text-teal-accent hover:bg-navy-hover transition-colors cursor-pointer"
@@ -210,7 +220,7 @@ import type { TreeNode } from '../../types'
 import SchemaTreeNode from '../schema/SchemaTreeNode.vue'
 import Modal from '../shared/Modal.vue'
 
-const emit = defineEmits(['toggle', 'newConnection', 'searchTable', 'openSettings', 'openWorkspace', 'openBackup', 'addCategory', 'openReferential', 'openFunctionsTriggers'])
+const emit = defineEmits(['toggle', 'newConnection', 'searchTable', 'openSettings', 'openWorkspace', 'openBackup', 'addCategory', 'openReferential', 'openFunctionsTriggers', 'openMaintenance'])
 
 const connectionsStore = useConnectionsStore()
 const workspaceStore = useWorkspaceStore()

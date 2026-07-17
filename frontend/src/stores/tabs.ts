@@ -164,6 +164,7 @@ export const useTabsStore = defineStore('tabs', () => {
       case 'home': return 'Home'
       case 'log': return 'Query Log'
       case 'backup': return 'Backup'
+      case 'maintenance': return 'Maintenance'
       case 'referential': return 'Referential Integrity'
       case 'functions-triggers': return 'Functions & Triggers'
       default: return 'Untitled'

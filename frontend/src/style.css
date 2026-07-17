@@ -133,24 +133,41 @@
   }
 
   /* Tabulator loading overlay styling */
-  .tabulator .tabulator-loader {
-    background-color: rgba(5, 5, 5, 0.45) !important;
-    backdrop-filter: blur(1px) !important;
+  .tabulator-loader {
+    background-color: rgba(5, 5, 5, 0.4) !important;
+    backdrop-filter: blur(2px) !important;
+    transition: all 0.3s ease !important;
   }
 
-  .tabulator .tabulator-loader .tabulator-loader-msg {
+  .tabulator-loader .tabulator-loader-msg.tabulator-loading {
     background-color: var(--bg-secondary) !important;
     border: 1px solid var(--border) !important;
-    color: var(--text-secondary) !important;
+    color: var(--accent-teal) !important;
     font-size: 0.75rem !important;
-    font-weight: 500 !important;
-    padding: 0.5rem 1rem !important;
-    border-radius: 0.375rem !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.075em !important;
+    text-transform: uppercase !important;
+    padding: 0.6rem 1.2rem !important;
+    border-radius: 0.5rem !important;
     box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
   }
 
-  .tabulator .tabulator-loader .tabulator-loader-msg.tabulator-loading {
-    border: 1px solid var(--border) !important;
+  .tabulator-loader .tabulator-loader-msg.tabulator-loading::before {
+    content: "" !important;
+    width: 12px !important;
+    height: 12px !important;
+    border: 2px solid var(--accent-teal) !important;
+    border-top-color: transparent !important;
+    border-radius: 50% !important;
+    animation: tabulator-spin 0.6s linear infinite !important;
+    display: inline-block !important;
+  }
+
+  @keyframes tabulator-spin {
+    to { transform: rotate(360deg); }
   }
 
   .tabulator .tabulator-row {
