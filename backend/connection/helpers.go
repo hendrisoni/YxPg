@@ -86,7 +86,7 @@ func RowsToResult(rows pgx.Rows, duration int64) models.QueryResult {
 		}
 	}
 
-	var allRows [][]interface{}
+	allRows := [][]interface{}{}
 	for rows.Next() {
 		values := make([]interface{}, len(fields))
 		valuePtrs := make([]interface{}, len(fields))

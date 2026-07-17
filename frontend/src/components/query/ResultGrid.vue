@@ -614,7 +614,8 @@ async function renderTable(result: QueryResult) {
       }
       totalRows.value = response.total_count
 
-      const transformedData = response.rows.map((row: any[]) => {
+      const rows = response.rows || []
+      const transformedData = rows.map((row: any[]) => {
         const rowData: Record<string, any> = {}
         row.forEach((val: any, colIdx: number) => {
           rowData[`col_${colIdx}`] = val
@@ -661,7 +662,8 @@ async function renderTable(result: QueryResult) {
         totalRows.value = response.total_count
       }
 
-      const transformedData = response.rows.map((row: any[]) => {
+      const rows = response.rows || []
+      const transformedData = rows.map((row: any[]) => {
         const rowData: Record<string, any> = {}
         row.forEach((val: any, colIdx: number) => {
           rowData[`col_${colIdx}`] = val
@@ -676,7 +678,8 @@ async function renderTable(result: QueryResult) {
     }
   } else {
     // Local data mode for small queries without querySql prop
-    const localData = result.rows.map((row) => {
+    const rows = result.rows || []
+    const localData = rows.map((row) => {
       const rowData: Record<string, any> = {}
       row.forEach((val, colIdx) => {
         rowData[`col_${colIdx}`] = val

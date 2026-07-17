@@ -282,10 +282,60 @@ function handleRootDrop(event: DragEvent) {
   }
 }
 
-function handleDeleteNode(id: string) {
-  if (confirm('Are you sure you want to remove this item from your workspace?')) {
-    workspaceStore.deleteNode(id)
+interface NodeLocation {
+  list: any[]
+  index: number
+  node: any
+  parent: any | null
+}
+
+function findNodeLocation(nodes: any[], id: string, parent: any | null = null): NodeLocation | null {
+  for (let i = 0; i < nodes.length; i++) {
+    const node = nodes[i]
+    if (node.id === id) {
+      return { list: nodes, index: i, node: node, parent: parent }
+    }
+    if (node.children && node.children.length > 0) {
+      const found = findNodeLocation(node.children, id, node)
+      if (found) return found
+    }
   }
+  return null
+}
+
+function handleDeleteNode(id: string) {
+  const loc = findNodeLocation(workspaceStore.workspaceTree, id)
+  if (!loc) return
+
+  const { list, index, node, parent } = loc
+  
+  // Remove node
+  list.splice(index, 1)
+  workspaceStore.saveWorkspace()
+
+  uiStore.addNotification({
+    type: 'info',
+    title: 'Removed from Workspace',
+    message: `"${node.label}" has been removed.`,
+    duration: 10000,
+    action: {
+      label: 'Undo',
+      callback: async () => {
+        // Restore node
+        list.splice(index, 0, node)
+        if (parent) {
+          parent.expanded = true
+        }
+        await workspaceStore.saveWorkspace()
+        uiStore.addNotification({
+          type: 'success',
+          title: 'Restored',
+          message: `"${node.label}" has been restored.`,
+          duration: 3000
+        })
+      }
+    }
+  })
 }
 
 function handleRenameNode(id: string, currentLabel: string) {

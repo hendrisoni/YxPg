@@ -56,6 +56,15 @@
             <span class="px-1.5 py-0.5 rounded text-[10px] uppercase font-bold" :class="typeBadgeClass(item.type)">
               {{ item.type }}
             </span>
+            <button
+              @click.stop="handleAdd(item, false)"
+              class="ml-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-teal-accent/20 hover:bg-teal-accent/35 text-teal-accent border border-teal-accent/30 hover:border-teal-accent/50 transition-all flex items-center gap-0.5 active:scale-95"
+            >
+              <svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M5 12h14M12 5v14" />
+              </svg>
+              Add
+            </button>
           </div>
         </div>
       </div>
@@ -142,7 +151,7 @@ function confirmSelection() {
   }
 }
 
-async function handleAdd(item: CatalogItem) {
+async function handleAdd(item: CatalogItem, shouldClose: boolean = true) {
   try {
     await workspaceStore.addObject(item)
     uiStore.addNotification({
@@ -150,7 +159,9 @@ async function handleAdd(item: CatalogItem) {
       title: 'Added to Tree',
       message: `"${item.name}" added to workspace root.`,
     })
-    emit('close')
+    if (shouldClose) {
+      emit('close')
+    }
   } catch (e: any) {
     uiStore.addNotification({
       type: 'error',

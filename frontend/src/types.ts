@@ -264,4 +264,8 @@ export interface Notification {
   title: string
   message: string
   duration?: number
+  action?: {
+    label: string
+    callback: () => void
+  }
 }

@@ -43,7 +43,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted, onUnmounted, watch } from 'vue'
 
 const props = withDefaults(defineProps<{
   show: boolean
@@ -53,7 +53,7 @@ const props = withDefaults(defineProps<{
   size: 'md',
 })
 
-defineEmits(['close'])
+const emit = defineEmits(['close'])
 
 const sizeClass = computed(() => {
   const sizes = {
@@ -63,6 +63,30 @@ const sizeClass = computed(() => {
     xl: 'max-w-4xl',
   }
   return sizes[props.size]
+})
+
+const handleKeydown = (e: KeyboardEvent) => {
+  if (e.key === 'Escape' && props.show) {
+    emit('close')
+  }
+}
+
+watch(() => props.show, (newVal) => {
+  if (newVal) {
+    window.addEventListener('keydown', handleKeydown)
+  } else {
+    window.removeEventListener('keydown', handleKeydown)
+  }
+})
+
+onMounted(() => {
+  if (props.show) {
+    window.addEventListener('keydown', handleKeydown)
+  }
+})
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeydown)
 })
 </script>
 

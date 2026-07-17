@@ -84,6 +84,7 @@
       :type="notif.type"
       :title="notif.title"
       :message="notif.message"
+      :action="notif.action"
       @close="uiStore.removeNotification(notif.id)"
     />
 

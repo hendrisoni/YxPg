@@ -27,6 +27,13 @@
         <div class="flex-1 min-w-0">
           <p class="text-sm font-medium text-text-primary">{{ title }}</p>
           <p v-if="message" class="text-xs text-text-secondary mt-0.5">{{ message }}</p>
+          <button
+            v-if="action"
+            @click="handleAction"
+            class="mt-1.5 px-2 py-0.5 rounded text-[10px] font-semibold bg-teal-accent/20 hover:bg-teal-accent/35 text-teal-accent border border-teal-accent/30 hover:border-teal-accent/50 transition-colors cursor-pointer"
+          >
+            {{ action.label }}
+          </button>
         </div>
 
         <!-- Close -->
@@ -51,9 +58,20 @@ const props = defineProps<{
   type: 'success' | 'error' | 'warning' | 'info'
   title: string
   message?: string
+  action?: {
+    label: string
+    callback: () => void
+  }
 }>()
 
-defineEmits(['close'])
+const emit = defineEmits(['close'])
+
+function handleAction() {
+  if (props.action?.callback) {
+    props.action.callback()
+  }
+  emit('close')
+}
 
 const typeClass = computed(() => {
   const classes = {
