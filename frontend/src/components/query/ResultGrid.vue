@@ -7,37 +7,34 @@
 
     <!-- Error state -->
     <div v-else-if="result.error" class="flex-1 flex flex-col items-center justify-center p-6 overflow-y-auto">
-      <div class="max-w-xl w-full text-center space-y-3 bg-navy-secondary/40 border border-navy-border/60 rounded-xl p-6 shadow-lg">
-        <svg class="w-10 h-10 mx-auto text-accent-red" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="10" /><path d="m15 9-6 6M9 9l6 6" />
+      <div
+        class="max-w-xl w-full text-center space-y-3 bg-navy-secondary/40 border border-navy-border/60 rounded-xl p-6 shadow-lg">
+        <svg class="w-10 h-10 mx-auto text-accent-red" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2">
+          <circle cx="12" cy="12" r="10" />
+          <path d="m15 9-6 6M9 9l6 6" />
         </svg>
         <div>
           <h3 class="text-sm text-accent-red font-semibold">Query Error</h3>
-          <p class="text-xs text-text-secondary mt-1.5 font-mono select-text text-left bg-navy-tertiary/60 border border-navy-border p-3 rounded-lg leading-relaxed whitespace-pre-wrap break-all">{{ result.error }}</p>
+          <p
+            class="text-xs text-text-secondary mt-1.5 font-mono select-text text-left bg-navy-tertiary/60 border border-navy-border p-3 rounded-lg leading-relaxed whitespace-pre-wrap break-all">
+            {{ result.error }}</p>
         </div>
 
         <!-- Read More / View SQL Toggle -->
         <div v-if="executedSql" class="text-left pt-2 border-t border-navy-border/40">
-          <button
-            type="button"
-            @click="showFullSql = !showFullSql"
-            class="text-[11px] text-teal-accent hover:underline flex items-center gap-1 cursor-pointer font-medium"
-          >
+          <button type="button" @click="showFullSql = !showFullSql"
+            class="text-[11px] text-teal-accent hover:underline flex items-center gap-1 cursor-pointer font-medium">
             <span>{{ showFullSql ? 'Hide executed SQL' : 'Show executed SQL' }}</span>
-            <svg
-              class="w-3 h-3 transition-transform duration-150"
-              :class="showFullSql ? 'rotate-180' : ''"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-            >
+            <svg class="w-3 h-3 transition-transform duration-150" :class="showFullSql ? 'rotate-180' : ''"
+              viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="m6 9 6 6 6-6" />
             </svg>
           </button>
-          
+
           <div v-if="showFullSql" class="mt-2">
-            <pre class="text-[10px] font-mono text-text-muted bg-navy-tertiary/40 border border-navy-border/50 rounded-lg p-3 overflow-x-auto max-h-48 select-text leading-normal whitespace-pre-wrap break-all">{{ executedSql }}</pre>
+            <pre
+              class="text-[10px] font-mono text-text-muted bg-navy-tertiary/40 border border-navy-border/50 rounded-lg p-3 overflow-x-auto max-h-48 select-text leading-normal whitespace-pre-wrap break-all">{{ executedSql }}</pre>
           </div>
         </div>
       </div>
@@ -51,10 +48,13 @@
       </div>
 
       <!-- Footer -->
-      <div class="grid-footer flex items-center justify-between border-t border-navy-border px-4 py-2 bg-navy-secondary text-xs text-text-secondary">
+      <div
+        class="grid-footer flex items-center justify-between border-t border-navy-border px-4 py-2 bg-navy-secondary text-xs text-text-secondary">
         <div class="flex items-center gap-3">
           <!-- Refresh -->
-          <button @click="handleRefresh" class="p-1 rounded hover:bg-navy-hover text-text-muted hover:text-text-primary transition-colors" title="Refresh">
+          <button @click="handleRefresh"
+            class="p-1 rounded hover:bg-navy-hover text-text-muted hover:text-text-primary transition-colors"
+            title="Refresh">
             <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
             </svg>
@@ -62,33 +62,41 @@
 
           <!-- Freeze Columns Dropdown -->
           <div class="relative flex-shrink-0" ref="freezeRef">
-            <button @click.stop="toggleFreezeMenu" class="p-1 rounded hover:bg-navy-hover transition-colors flex items-center justify-center" :class="showFreezeMenu ? 'text-teal-accent bg-teal-accent/10' : 'text-text-muted hover:text-text-primary'" title="Freeze Columns">
-              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <button @click.stop="toggleFreezeMenu"
+              class="p-1 rounded hover:bg-navy-hover transition-colors flex items-center justify-center"
+              :class="showFreezeMenu ? 'text-teal-accent bg-teal-accent/10' : 'text-text-muted hover:text-text-primary'"
+              title="Freeze Columns">
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
                 <line x1="12" y1="17" x2="12" y2="22" />
-                <path d="M5 17h14v-1.76a2 2 0 0 0-.44-1.24l-2.78-3.48A2 2 0 0 1 15 9.28V5a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v4.28a2 2 0 0 1-.78 1.24l-2.78 3.48a2 2 0 0 0-.44 1.24V17z" />
+                <path
+                  d="M5 17h14v-1.76a2 2 0 0 0-.44-1.24l-2.78-3.48A2 2 0 0 1 15 9.28V5a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v4.28a2 2 0 0 1-.78 1.24l-2.78 3.48a2 2 0 0 0-.44 1.24V17z" />
               </svg>
             </button>
-            <div v-if="showFreezeMenu" class="absolute bottom-8 left-0 z-50 w-48 p-2.5 rounded-lg shadow-xl bg-navy-secondary border border-navy-border flex flex-col gap-1.5 animate-fade-in select-none">
+            <div v-if="showFreezeMenu"
+              class="absolute bottom-8 left-0 z-50 w-48 p-2.5 rounded-lg shadow-xl bg-navy-secondary border border-navy-border flex flex-col gap-1.5 animate-fade-in select-none">
               <div class="text-[10px] font-bold text-text-muted uppercase tracking-wider px-1 py-0.5">
                 <span>Freeze Columns</span>
               </div>
               <div class="h-px bg-navy-border my-0.5"></div>
-              <div v-if="freezeableColumns.length > 0" class="flex flex-col gap-1 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
-                <button
-                  v-for="col in freezeableColumns"
-                  :key="col.field"
-                  @click.stop="toggleFreezeColumn(col.field)"
+              <div v-if="freezeableColumns.length > 0"
+                class="flex flex-col gap-1 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
+                <button v-for="col in freezeableColumns" :key="col.field" @click.stop="toggleFreezeColumn(col.field)"
                   class="flex items-center justify-between px-2 py-1.5 rounded hover:bg-navy-hover cursor-pointer text-xs transition-colors w-full text-left"
-                  :class="col.frozen ? 'text-teal-accent font-medium' : 'text-text-primary'"
-                >
+                  :class="col.frozen ? 'text-teal-accent font-medium' : 'text-text-primary'">
                   <span class="truncate flex-1 text-left">{{ col.title }}</span>
-                  <svg v-if="col.frozen" class="w-3 h-3 text-teal-accent flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <svg v-if="col.frozen" class="w-3 h-3 text-teal-accent flex-shrink-0" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <line x1="12" y1="17" x2="12" y2="22" />
-                    <path d="M5 17h14v-1.76a2 2 0 0 0-.44-1.24l-2.78-3.48A2 2 0 0 1 15 9.28V5a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v4.28a2 2 0 0 1-.78 1.24l-2.78 3.48a2 2 0 0 0-.44 1.24V17z" />
+                    <path
+                      d="M5 17h14v-1.76a2 2 0 0 0-.44-1.24l-2.78-3.48A2 2 0 0 1 15 9.28V5a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v4.28a2 2 0 0 1-.78 1.24l-2.78 3.48a2 2 0 0 0-.44 1.24V17z" />
                   </svg>
-                  <svg v-else class="w-3 h-3 text-text-muted opacity-40 hover:opacity-100 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <svg v-else class="w-3 h-3 text-text-muted opacity-40 hover:opacity-100 flex-shrink-0"
+                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round">
                     <line x1="12" y1="17" x2="12" y2="22" />
-                    <path d="M5 17h14v-1.76a2 2 0 0 0-.44-1.24l-2.78-3.48A2 2 0 0 1 15 9.28V5a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v4.28a2 2 0 0 1-.78 1.24l-2.78 3.48a2 2 0 0 0-.44 1.24V17z" />
+                    <path
+                      d="M5 17h14v-1.76a2 2 0 0 0-.44-1.24l-2.78-3.48A2 2 0 0 1 15 9.28V5a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v4.28a2 2 0 0 1-.78 1.24l-2.78 3.48a2 2 0 0 0-.44 1.24V17z" />
                   </svg>
                 </button>
               </div>
@@ -99,8 +107,11 @@
           </div>
 
           <!-- Export to XLSX -->
-          <button @click="exportToXlsx" class="p-1 rounded hover:bg-navy-hover text-text-muted hover:text-text-primary transition-colors" title="Export to XLSX">
-            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <button @click="exportToXlsx"
+            class="p-1 rounded hover:bg-navy-hover text-text-muted hover:text-text-primary transition-colors"
+            title="Export to XLSX">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
               <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
               <polyline points="14 2 14 8 20 8" />
               <path d="M8 13h2v5H8z" />
@@ -108,10 +119,26 @@
               <path d="M16 12h2v6h-2z" />
             </svg>
           </button>
+
+          <!-- View Form -->
+          <button @click="openViewForm"
+            class="p-1 rounded hover:bg-navy-hover transition-colors flex items-center justify-center"
+            :class="selectedRowData ? 'text-teal-accent hover:text-teal-hover' : 'text-text-muted opacity-50 cursor-not-allowed'"
+            :disabled="!selectedRowData"
+            title="View Form">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+              <polyline points="10 9 9 9 8 9"></polyline>
+            </svg>
+          </button>
         </div>
 
         <div class="flex items-center gap-2">
-          <span v-if="result && result.duration_ms !== undefined && result.duration_ms !== null" class="text-text-muted font-mono">[{{ result.duration_ms }}ms]</span>
+          <span v-if="result && result.duration_ms !== undefined && result.duration_ms !== null"
+            class="text-text-muted font-mono">[{{ result.duration_ms }}ms]</span>
           <span v-if="tab?.type === 'table' || querySql">Showing {{ displayedCount }} of {{ totalRows }} rows</span>
           <span v-else>{{ result.row_count }} rows</span>
         </div>
@@ -121,8 +148,10 @@
     <!-- No rows -->
     <div v-else-if="result.row_count === 0" class="flex-1 flex items-center justify-center">
       <div class="text-center">
-        <svg class="w-8 h-8 mx-auto text-text-muted mb-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18M3 15h18M9 3v18" />
+        <svg class="w-8 h-8 mx-auto text-text-muted mb-2" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2">
+          <rect x="3" y="3" width="18" height="18" rx="2" />
+          <path d="M3 9h18M3 15h18M9 3v18" />
         </svg>
         <p class="text-sm text-text-muted">No rows returned</p>
         <p v-if="result.duration_ms" class="text-xs text-text-muted mt-1">
@@ -130,6 +159,17 @@
         </p>
       </div>
     </div>
+
+    <!-- Result Form Modal -->
+    <ResultForm
+      v-if="showResultForm"
+      :show="showResultForm"
+      :row-data="selectedRowData"
+      :columns="result.columns"
+      :tab="tab"
+      @close="showResultForm = false"
+      @save="handleFormSave"
+    />
   </div>
 </template>
 
@@ -138,12 +178,13 @@ import { ref, watch, onUnmounted, onMounted, nextTick } from 'vue'
 import * as XLSX from 'xlsx'
 
 if (typeof window !== 'undefined') {
-  ;(window as any).XLSX = XLSX
+  ; (window as any).XLSX = XLSX
 }
 import { useConnectionsStore } from '../../stores/connections'
 import { useSchemaStore } from '../../stores/schema'
 import { useUiStore } from '../../stores/ui'
 import type { QueryResult, Tab, BrowseOptions } from '../../types'
+import ResultForm from './ResultForm.vue'
 
 const props = defineProps<{
   result: QueryResult | null
@@ -162,6 +203,10 @@ const showFullSql = ref(false)
 
 const tableContainer = ref<HTMLElement | null>(null)
 let table: any = null
+let tableColumns: any[] = []
+
+const selectedRowData = ref<any | null>(null)
+const showResultForm = ref(false)
 
 const showFilters = ref(false)
 const showFreezeMenu = ref(false)
@@ -240,18 +285,18 @@ function toggleFreezeMenu() {
 
 async function toggleFreezeColumn(field: string) {
   if (!table) return
-  
+
   const columns = table.getColumns().filter((col: any) => {
     const def = col.getDefinition()
     return def.field && def.field !== '__rownum'
   })
-  
+
   const targetIdx = columns.findIndex((col: any) => col.getField() === field)
   if (targetIdx === -1) return
-  
+
   const targetCol = columns[targetIdx]
   const isCurrentlyFrozen = !!targetCol.getDefinition().frozen
-  
+
   if (isCurrentlyFrozen) {
     // Unfreeze this column and all columns to the right of it
     for (let i = targetIdx; i < columns.length; i++) {
@@ -263,7 +308,7 @@ async function toggleFreezeColumn(field: string) {
       await table.updateColumnDefinition(columns[i].getField(), { frozen: true })
     }
   }
-  
+
   populateFreezeableColumns()
 }
 
@@ -363,7 +408,7 @@ function escapeSqlValue(value: any, dataType: string): string {
   if (value === null || value === undefined) {
     return 'NULL'
   }
-  
+
   if (typeof value === 'boolean') {
     return value ? 'true' : 'false'
   }
@@ -377,7 +422,7 @@ function escapeSqlValue(value: any, dataType: string): string {
   }
 
   const str = String(value)
-  
+
   if (str === '') {
     const typeName = dataType ? dataType.toLowerCase() : ''
     const isCharOrText = typeName.includes('char') || typeName.includes('text') || typeName.includes('uuid')
@@ -388,14 +433,14 @@ function escapeSqlValue(value: any, dataType: string): string {
 
   const typeName = dataType ? dataType.toLowerCase() : ''
   const isNum = typeName.includes('int') ||
-                typeName.includes('num') ||
-                typeName.includes('decimal') ||
-                typeName.includes('real') ||
-                typeName.includes('double') ||
-                typeName.includes('float') ||
-                typeName.includes('precision') ||
-                typeName.includes('money')
-  
+    typeName.includes('num') ||
+    typeName.includes('decimal') ||
+    typeName.includes('real') ||
+    typeName.includes('double') ||
+    typeName.includes('float') ||
+    typeName.includes('precision') ||
+    typeName.includes('money')
+
   if (isNum) {
     const parsed = Number(str)
     if (!isNaN(parsed)) {
@@ -414,7 +459,7 @@ async function renderTable(result: QueryResult) {
   // Dynamically import Tabulator
   const { TabulatorFull } = await import('tabulator-tables')
 
-  let tableColumns: any[] = []
+  tableColumns = []
   const isTableTab = props.tab && props.tab.type === 'table'
   if (isTableTab) {
     const connId = props.tab.connectionId || connectionsStore.currentConnectionId
@@ -479,6 +524,7 @@ async function renderTable(result: QueryResult) {
         headerTooltip: true,
         headerFilter: 'input',
         hozAlign: numericCol ? 'right' : 'left',
+        maxWidth: 400,
         formatter: (cell: any) => {
           const value = cell.getValue()
           if (value === null || value === undefined) {
@@ -548,7 +594,6 @@ async function renderTable(result: QueryResult) {
     height: '100%',
     selectableRows: 1,
     selectableRowsRangeMode: 'click',
-    renderHorizontal: 'virtual',
     renderVertical: 'virtual',
     movableColumns: true,
     resizableColumns: true,
@@ -563,7 +608,7 @@ async function renderTable(result: QueryResult) {
     tableConfig.paginationSize = 100
     tableConfig.filterMode = "remote"
     tableConfig.sortMode = "remote"
-    
+
     tableConfig.ajaxRequestFunc = async (url: string, config: any, params: any) => {
       const page = params.page || 1
       const size = params.size || 100
@@ -699,11 +744,15 @@ async function renderTable(result: QueryResult) {
     displayedCount.value = table.getDataCount()
   })
 
+  table.on('rowSelectionChanged', (data: any[]) => {
+    selectedRowData.value = data.length > 0 ? data[0] : null
+  })
+
   if (isTableTab) {
     table.on('cellEdited', async (cell: any) => {
       const field = cell.getField()
       if (field === '__rownum') return
-      
+
       const colIdx = parseInt(field.replace('col_', ''))
       if (isNaN(colIdx) || !props.result || !props.result.columns[colIdx]) return
 
@@ -729,17 +778,17 @@ async function renderTable(result: QueryResult) {
 
       const rowData = cell.getRow().getData()
       const whereClauses: string[] = []
-      
+
       for (const keyColName of columnsToUse) {
         const targetColIdx = props.result.columns.findIndex((c: any) => c.name === keyColName)
         if (targetColIdx === -1) continue
 
         const targetField = `col_${targetColIdx}`
         const valToUse = targetField === field ? oldValue : rowData[targetField]
-        
+
         const targetColMeta = props.result.columns[targetColIdx]
         const escapedVal = escapeSqlValue(valToUse, targetColMeta.data_type)
-        
+
         if (escapedVal === 'NULL') {
           whereClauses.push(`"${keyColName}" IS NULL`)
         } else {
@@ -767,7 +816,7 @@ async function renderTable(result: QueryResult) {
         if (queryRes.error) {
           throw new Error(queryRes.error)
         }
-        
+
         const uiStore = useUiStore()
         uiStore.addNotification({
           type: 'success',
@@ -787,10 +836,113 @@ async function renderTable(result: QueryResult) {
   }
 }
 
+function openViewForm() {
+  if (selectedRowData.value) {
+    showResultForm.value = true
+  }
+}
+
+async function handleFormSave(updatedValues: Record<string, any>) {
+  if (!table || !props.result || !props.tab?.table || !selectedRowData.value) return
+
+  const connId = props.tab.connectionId || connectionsStore.currentConnectionId
+  if (!connId) return
+
+  const schema = props.tab.schema || 'public'
+  const tableName = props.tab.table
+
+  // Find PK columns in the schema
+  const pkColumns = tableColumns.filter((c: any) => c.is_primary_key)
+  const columnsToUse = pkColumns.length > 0 ? pkColumns.map((c: any) => c.column_name) : props.result.columns.map((c: any) => c.name)
+
+  const whereClauses: string[] = []
+
+  // Build where clause using original selectedRowData
+  for (const keyColName of columnsToUse) {
+    const targetColIdx = props.result.columns.findIndex((c: any) => c.name === keyColName)
+    if (targetColIdx === -1) continue
+
+    const targetField = `col_${targetColIdx}`
+    const valToUse = selectedRowData.value[targetField]
+
+    const targetColMeta = props.result.columns[targetColIdx]
+    const escapedVal = escapeSqlValue(valToUse, targetColMeta.data_type)
+
+    if (escapedVal === 'NULL') {
+      whereClauses.push(`"${keyColName}" IS NULL`)
+    } else {
+      whereClauses.push(`"${keyColName}" = ${escapedVal}`)
+    }
+  }
+
+  if (whereClauses.length === 0) {
+    const uiStore = useUiStore()
+    uiStore.addNotification({
+      type: 'error',
+      title: 'Update Error',
+      message: 'Cannot identify row for update. Missing identifiers.'
+    })
+    return
+  }
+
+  // Build SET clauses for modified fields
+  const setClauses: string[] = []
+  props.result.columns.forEach((col, idx) => {
+    const field = `col_${idx}`
+    const newValue = updatedValues[field]
+    const oldValue = selectedRowData.value[field]
+
+    if (newValue !== oldValue) {
+      const escapedNewVal = escapeSqlValue(newValue, col.data_type)
+      setClauses.push(`"${col.name}" = ${escapedNewVal}`)
+    }
+  })
+
+  if (setClauses.length === 0) {
+    showResultForm.value = false
+    return
+  }
+
+  const updateSql = `UPDATE "${schema}"."${tableName}" SET ${setClauses.join(', ')} WHERE ${whereClauses.join(' AND ')};`
+
+  try {
+    const bindings = connectionsStore.getWailsBindings()
+    const queryRes = await bindings.ExecuteQuery(connId, updateSql, 30)
+    if (queryRes.error) {
+      throw new Error(queryRes.error)
+    }
+
+    // Reactively update the grid rows data without reloading the entire query
+    const selectedRow = table.getSelectedRows()[0]
+    if (selectedRow) {
+      selectedRow.update(updatedValues)
+    }
+
+    // Also update selectedRowData to match new values
+    selectedRowData.value = { ...selectedRowData.value, ...updatedValues }
+
+    const uiStore = useUiStore()
+    uiStore.addNotification({
+      type: 'success',
+      title: 'Row Updated',
+      message: 'Changes saved successfully.'
+    })
+    showResultForm.value = false
+  } catch (err: any) {
+    const uiStore = useUiStore()
+    uiStore.addNotification({
+      type: 'error',
+      title: 'Update Failed',
+      message: err.message || 'Failed to update row.'
+    })
+  }
+}
+
 function destroyTable() {
   if (table) {
     table.destroy()
     table = null
   }
+  selectedRowData.value = null
 }
 </script>
