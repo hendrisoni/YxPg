@@ -154,8 +154,8 @@
           <path d="M3 9h18M3 15h18M9 3v18" />
         </svg>
         <p class="text-sm text-text-muted">No rows returned</p>
-        <p v-if="result.duration_ms" class="text-xs text-text-muted mt-1">
-          {{ result.duration_ms }}ms
+        <p v-if="result?.duration_ms" class="text-xs text-text-muted mt-1">
+          {{ result?.duration_ms }}ms
         </p>
       </div>
     </div>
@@ -165,7 +165,7 @@
       v-if="showResultForm"
       :show="showResultForm"
       :row-data="selectedRowData"
-      :columns="result.columns"
+      :columns="result?.columns || []"
       :tab="tab"
       @close="showResultForm = false"
       @save="handleFormSave"
@@ -224,7 +224,7 @@ watch(
       destroyTable()
     }
   },
-  { deep: true, immediate: true }
+  { immediate: true }
 )
 
 const closeFreezeMenu = (e: MouseEvent) => {

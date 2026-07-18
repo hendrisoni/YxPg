@@ -1,4 +1,4 @@
-package export
+package dbexport
 
 import (
 	"encoding/csv"

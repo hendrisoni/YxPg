@@ -447,8 +447,7 @@ watch(
   [results, lastExecutedSql, resultHeight],
   () => {
     saveQueryTabState()
-  },
-  { deep: true }
+  }
 )
 
 onMounted(async () => {

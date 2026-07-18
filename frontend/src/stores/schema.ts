@@ -146,95 +146,96 @@ export const useSchemaStore = defineStore('schema', () => {
     const bindings = useConnectionsStore().getWailsBindings()
     treeData.value = []
 
-    for (const schema of schemas.value) {
-      const schemaNode: TreeNode = {
-        id: `schema_${schema.name}`,
-        label: schema.name,
-        type: 'schema',
-        icon: 'database',
-        children: [],
-        expanded: false,
-      }
+    const nodes = await Promise.all(
+      schemas.value.map(async (schema) => {
+        const schemaNode: TreeNode = {
+          id: `schema_${schema.name}`,
+          label: schema.name,
+          type: 'schema',
+          icon: 'database',
+          children: [],
+          expanded: false,
+        }
 
-      let tableNodes: TreeNode[] = []
-      let viewNodes: TreeNode[] = []
-      let funcNodes: TreeNode[] = []
-      let seqNodes: TreeNode[] = []
-      let typeNodes: TreeNode[] = []
+        let tableNodes: TreeNode[] = []
+        let viewNodes: TreeNode[] = []
+        let funcNodes: TreeNode[] = []
+        let seqNodes: TreeNode[] = []
+        let typeNodes: TreeNode[] = []
 
-      // Load tables
-      try {
-        const schemaTables = await bindings.GetTables(connId, schema.name)
-        tableNodes = schemaTables.map(t => ({
-          id: `table_${schema.name}_${t.name}`,
-          label: t.name,
-          type: 'table' as const,
-          icon: t.type === 'view' ? 'view' : 'table',
-          data: t,
-        }))
-      } catch (e) {
-        console.error(`Failed to load tables for schema ${schema.name}:`, e)
-      }
+        try {
+          const [schemaTables, schemaViews, schemaFuncs, schemaSeqs, schemaTypes] = await Promise.all([
+            bindings.GetTables(connId, schema.name).catch(e => {
+              console.error(`Failed to load tables for schema ${schema.name}:`, e)
+              return []
+            }),
+            bindings.GetViews(connId, schema.name).catch(e => {
+              console.error(`Failed to load views for schema ${schema.name}:`, e)
+              return []
+            }),
+            bindings.GetFunctions(connId, schema.name).catch(e => {
+              console.error(`Failed to load functions for schema ${schema.name}:`, e)
+              return []
+            }),
+            bindings.GetSequences(connId, schema.name).catch(e => {
+              console.error(`Failed to load sequences for schema ${schema.name}:`, e)
+              return []
+            }),
+            bindings.GetTypes(connId, schema.name).catch(e => {
+              console.error(`Failed to load types for schema ${schema.name}:`, e)
+              return []
+            })
+          ])
 
-      // Load views
-      try {
-        const schemaViews = await bindings.GetViews(connId, schema.name)
-        viewNodes = schemaViews.map(v => ({
-          id: `view_${schema.name}_${v.name}`,
-          label: v.name,
-          type: 'view' as const,
-          icon: 'view',
-          data: v,
-        }))
-      } catch (e) {
-        console.error(`Failed to load views for schema ${schema.name}:`, e)
-      }
+          tableNodes = schemaTables.map(t => ({
+            id: `table_${schema.name}_${t.name}`,
+            label: t.name,
+            type: 'table' as const,
+            icon: t.type === 'view' ? 'view' : 'table',
+            data: t,
+          }))
 
-      // Load functions
-      try {
-        const schemaFuncs = await bindings.GetFunctions(connId, schema.name)
-        funcNodes = schemaFuncs.map(f => ({
-          id: `func_${schema.name}_${f.name}`,
-          label: f.name,
-          type: 'function' as const,
-          icon: 'function',
-          data: f,
-        }))
-      } catch (e) {
-        console.error(`Failed to load functions for schema ${schema.name}:`, e)
-      }
+          viewNodes = schemaViews.map(v => ({
+            id: `view_${schema.name}_${v.name}`,
+            label: v.name,
+            type: 'view' as const,
+            icon: 'view',
+            data: v,
+          }))
 
-      // Load sequences
-      try {
-        const schemaSeqs = await bindings.GetSequences(connId, schema.name)
-        seqNodes = schemaSeqs.map(s => ({
-          id: `seq_${schema.name}_${s.name}`,
-          label: s.name,
-          type: 'sequence' as const,
-          icon: 'sequence',
-          data: s,
-        }))
-      } catch (e) {
-        console.error(`Failed to load sequences for schema ${schema.name}:`, e)
-      }
+          funcNodes = schemaFuncs.map(f => ({
+            id: `func_${schema.name}_${f.name}`,
+            label: f.name,
+            type: 'function' as const,
+            icon: 'function',
+            data: f,
+          }))
 
-      // Load custom types
-      try {
-        const schemaTypes = await bindings.GetTypes(connId, schema.name)
-        typeNodes = schemaTypes.map(t => ({
-          id: `type_${schema.name}_${t.name}`,
-          label: t.name,
-          type: 'function' as const,
-          icon: 'type',
-          data: t,
-        }))
-      } catch (e) {
-        console.error(`Failed to load types for schema ${schema.name}:`, e)
-      }
+          seqNodes = schemaSeqs.map(s => ({
+            id: `seq_${schema.name}_${s.name}`,
+            label: s.name,
+            type: 'sequence' as const,
+            icon: 'sequence',
+            data: s,
+          }))
 
-      schemaNode.children = [...tableNodes, ...viewNodes, ...funcNodes, ...seqNodes, ...typeNodes]
-      treeData.value.push(schemaNode)
-    }
+          typeNodes = schemaTypes.map(t => ({
+            id: `type_${schema.name}_${t.name}`,
+            label: t.name,
+            type: 'function' as const,
+            icon: 'type',
+            data: t,
+          }))
+        } catch (err) {
+          console.error(`Failed concurrently loading metadata for schema ${schema.name}:`, err)
+        }
+
+        schemaNode.children = [...tableNodes, ...viewNodes, ...funcNodes, ...seqNodes, ...typeNodes]
+        return schemaNode
+      })
+    )
+
+    treeData.value = nodes
   }
 
   async function refreshSchema(connId: string) {

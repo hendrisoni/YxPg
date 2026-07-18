@@ -246,7 +246,7 @@ watch(() => tabsStore.activeTabId, () => {
 
 watch(() => tabsStore.tabs, () => {
   updateSlider()
-}, { deep: true })
+})
 
 onMounted(() => {
   updateSlider()

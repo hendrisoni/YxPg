@@ -636,7 +636,7 @@
           :result="queryResult"
           :tab="tab"
           :query-sql="generatedSQL"
-          :query-connection-id="tab.connectionId || connectionsStore.currentConnectionId"
+          :query-connection-id="tab.connectionId || connectionsStore.currentConnectionId || undefined"
         />
       </div>
     </div>

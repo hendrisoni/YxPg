@@ -2,6 +2,7 @@ package connection
 
 import (
 	"context"
+	"database/sql/driver"
 	"fmt"
 	"strconv"
 
@@ -88,19 +89,31 @@ func RowsToResult(rows pgx.Rows, duration int64) models.QueryResult {
 
 	allRows := [][]interface{}{}
 	for rows.Next() {
-		values := make([]interface{}, len(fields))
-		valuePtrs := make([]interface{}, len(fields))
-		for i := range values {
-			valuePtrs[i] = &values[i]
-		}
-
-		if err := rows.Scan(valuePtrs...); err != nil {
+		values, err := rows.Values()
+		if err != nil {
 			continue
 		}
 
 		// Convert values to JSON-serializable types
 		row := make([]interface{}, len(values))
 		for i, v := range values {
+			if v == nil {
+				row[i] = nil
+				continue
+			}
+
+			// If it's a driver.Valuer (like pgtype wrapper structs), extract its primitive value
+			if valuer, ok := v.(driver.Valuer); ok {
+				if dv, err := valuer.Value(); err == nil {
+					v = dv
+				}
+			}
+
+			if v == nil {
+				row[i] = nil
+				continue
+			}
+
 			switch val := v.(type) {
 			case []byte:
 				row[i] = string(val)
@@ -114,8 +127,6 @@ func RowsToResult(rows pgx.Rows, duration int64) models.QueryResult {
 				row[i] = val
 			case string:
 				row[i] = val
-			case nil:
-				row[i] = nil
 			default:
 				row[i] = fmt.Sprintf("%v", val)
 			}

@@ -1,4 +1,4 @@
-export namespace export {
+export namespace dbexport {
 	
 	export class BackupOptions {
 	    connection_id: string;

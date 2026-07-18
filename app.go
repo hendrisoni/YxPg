@@ -15,7 +15,7 @@ import (
 
 	"yxpg/backend/connection"
 	"yxpg/backend/ddl"
-	"yxpg/backend/export"
+	"yxpg/backend/dbexport"
 	"yxpg/backend/models"
 	"yxpg/backend/query"
 	"yxpg/backend/schema"
@@ -346,11 +346,11 @@ func (a *App) ExecuteRawDDL(connID, sql string) error {
 func (a *App) ExportData(result models.QueryResult, format string, schemaName, table string) (string, error) {
 	switch format {
 	case "csv":
-		return export.ExportCSV(result, ",")
+		return dbexport.ExportCSV(result, ",")
 	case "json":
-		return export.ExportJSON(result)
+		return dbexport.ExportJSON(result)
 	case "sql":
-		return export.ExportSQL(result, schemaName, table)
+		return dbexport.ExportSQL(result, schemaName, table)
 	default:
 		return "", fmt.Errorf("unsupported format: %s", format)
 	}
@@ -402,7 +402,7 @@ func (a *App) BrowseBackupFolder() (string, error) {
 }
 
 // StartBackup begins the pg_dump process
-func (a *App) StartBackup(opts export.BackupOptions) error {
+func (a *App) StartBackup(opts dbexport.BackupOptions) error {
 	conn, err := a.manager.GetConn(opts.ConnectionID)
 	if err != nil {
 		return fmt.Errorf("failed to retrieve connection: %w", err)
@@ -417,11 +417,11 @@ func (a *App) StartBackup(opts export.BackupOptions) error {
 		opts.PgBinPath = config["pg_bin_path"]
 	}
 
-	return export.RunPgDump(a.ctx, *conn, opts)
+	return dbexport.RunPgDump(a.ctx, *conn, opts)
 }
 
 // StartMaintenance begins the database maintenance process
-func (a *App) StartMaintenance(opts export.MaintenanceOptions) error {
+func (a *App) StartMaintenance(opts dbexport.MaintenanceOptions) error {
 	conn, err := a.manager.GetConn(opts.ConnectionID)
 	if err != nil {
 		return fmt.Errorf("failed to retrieve connection: %w", err)
@@ -430,7 +430,7 @@ func (a *App) StartMaintenance(opts export.MaintenanceOptions) error {
 		return fmt.Errorf("connection not found: %s", opts.ConnectionID)
 	}
 
-	return export.RunMaintenance(a.ctx, *conn, opts)
+	return dbexport.RunMaintenance(a.ctx, *conn, opts)
 }
 
 

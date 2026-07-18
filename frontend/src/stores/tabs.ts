@@ -41,27 +41,28 @@ export const useTabsStore = defineStore('tabs', () => {
   const tabs = ref<Tab[]>(savedTabsStr ? JSON.parse(savedTabsStr) : [])
   const activeTabId = ref<string | null>(localStorage.getItem('tabs:active_tab_id'))
 
-  // Persist state automatically using watchers
+  // Create computed property that represents clean, serializable tabs state
+  const serializableTabs = computed(() => {
+    return tabs.value.map(tab => {
+      const { data, ...rest } = tab
+      let cleanData = undefined
+      if (data) {
+        const { results, queryResult, ...otherData } = data
+        cleanData = otherData
+      }
+      return { ...rest, data: cleanData }
+    })
+  })
+
+  // Persist state automatically using watchers on the serialized computed value
   watch(
-    tabs,
-    (newTabs) => {
-      const tabsToSave = newTabs.map(tab => {
-        if (tab.data) {
-          if (tab.type === 'query') {
-            const { results, ...otherData } = tab.data
-            return { ...tab, data: otherData }
-          }
-          if (tab.type === 'builder') {
-            const { queryResult, ...otherData } = tab.data
-            return { ...tab, data: otherData }
-          }
-        }
-        return tab
-      })
-      localStorage.setItem('tabs:open_tabs', JSON.stringify(tabsToSave))
+    serializableTabs,
+    (newTabsToSave) => {
+      localStorage.setItem('tabs:open_tabs', JSON.stringify(newTabsToSave))
     },
     { deep: true }
   )
+
 
   watch(
     activeTabId,
