@@ -133,42 +133,133 @@
   }
 
   /* Tabulator loading overlay styling */
-  .tabulator-loader {
-    background-color: rgba(5, 5, 5, 0.4) !important;
-    backdrop-filter: blur(2px) !important;
+  .tabulator .tabulator-alert {
+    background-color: rgba(10, 15, 30, 0.45) !important;
+    backdrop-filter: blur(6px) !important;
     transition: all 0.3s ease !important;
   }
 
-  .tabulator-loader .tabulator-loader-msg.tabulator-loading {
-    background-color: var(--bg-secondary) !important;
-    border: 1px solid var(--border) !important;
-    color: var(--accent-teal) !important;
-    font-size: 0.75rem !important;
-    font-weight: 600 !important;
-    letter-spacing: 0.075em !important;
-    text-transform: uppercase !important;
-    padding: 0.6rem 1.2rem !important;
-    border-radius: 0.5rem !important;
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5) !important;
+  .tabulator .tabulator-alert .tabulator-alert-msg {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
     display: inline-flex !important;
     align-items: center !important;
-    gap: 0.5rem !important;
+    justify-content: center !important;
+    color: transparent !important;
+    font-size: 0 !important;
   }
 
-  .tabulator-loader .tabulator-loader-msg.tabulator-loading::before {
-    content: "" !important;
-    width: 12px !important;
-    height: 12px !important;
-    border: 2px solid var(--accent-teal) !important;
-    border-top-color: transparent !important;
-    border-radius: 50% !important;
-    animation: tabulator-spin 0.6s linear infinite !important;
-    display: inline-block !important;
+  /* Futuristic neon-glass data loader */
+  .grid-loader {
+    position: relative;
+    isolation: isolate;
+    display: flex;
+    width: 190px;
+    flex-direction: column;
+    align-items: center;
+    padding: 8px;
+    color: #e9fffc;
+  }
+
+  .grid-loader__glow {
+    position: absolute;
+    z-index: -1;
+    top: -40px;
+    width: 160px;
+    height: 130px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(0, 225, 190, 0.3), transparent 68%);
+    filter: blur(8px);
+    animation: grid-loader-glow 2.4s ease-in-out infinite;
+  }
+
+  .grid-loader__orbital {
+    position: relative;
+    width: 58px;
+    height: 58px;
+    margin-bottom: 16px;
+  }
+
+  .grid-loader__ring,
+  .grid-loader__core {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+  }
+
+  .grid-loader__ring--outer {
+    border: 2px solid transparent;
+    border-top-color: #59ffe0;
+    border-right-color: rgba(89, 255, 224, 0.35);
+    filter: drop-shadow(0 0 5px rgba(89, 255, 224, 0.8));
+    animation: grid-loader-spin 0.95s linear infinite;
+  }
+
+  .grid-loader__ring--inner {
+    inset: 9px;
+    border: 1px solid transparent;
+    border-bottom-color: #8b7dff;
+    border-left-color: rgba(139, 125, 255, 0.45);
+    animation: grid-loader-spin-reverse 1.35s linear infinite;
+  }
+
+  .grid-loader__core {
+    inset: 21px;
+    background: #72ffe3;
+    box-shadow: 0 0 10px #45f7d2, 0 0 24px rgba(69, 247, 210, 0.9);
+    animation: grid-loader-core 1.35s ease-in-out infinite;
+  }
+
+  .grid-loader__title {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    text-shadow: 0 0 14px rgba(89, 255, 224, 0.65);
+  }
+
+  .grid-loader__subtitle {
+    margin-top: 6px;
+    color: #8da2bd;
+    font-size: 10px;
+    letter-spacing: 0.02em;
+  }
+
+  .grid-loader__progress {
+    width: 100%;
+    height: 2px;
+    margin-top: 17px;
+    overflow: hidden;
+    border-radius: 99px;
+    background: rgba(136, 170, 205, 0.16);
+  }
+
+  .grid-loader__progress span {
+    display: block;
+    width: 45%;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, transparent, #68ffe2, #9587ff, transparent);
+    box-shadow: 0 0 10px #68ffe2;
+    animation: grid-loader-progress 1.45s ease-in-out infinite;
   }
 
   @keyframes tabulator-spin {
     to { transform: rotate(360deg); }
   }
+
+  @keyframes tabulator-pulse {
+    0%, 100% { opacity: 0.3; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.3); }
+  }
+
+  @keyframes grid-loader-spin { to { transform: rotate(360deg); } }
+  @keyframes grid-loader-spin-reverse { to { transform: rotate(-360deg); } }
+  @keyframes grid-loader-core { 50% { transform: scale(1.45); opacity: 0.72; } }
+  @keyframes grid-loader-glow { 50% { transform: scale(1.2); opacity: 0.72; } }
+  @keyframes grid-loader-progress { from { transform: translateX(-130%); } to { transform: translateX(280%); } }
 
   .tabulator .tabulator-row {
     background-color: var(--bg-primary) !important;

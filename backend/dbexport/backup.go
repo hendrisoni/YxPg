@@ -125,6 +125,9 @@ func RunPgDump(ctx context.Context, conn models.Connection, opts BackupOptions) 
 			line := scanner.Text()
 			wailsruntime.EventsEmit(ctx, "backup:log", line)
 		}
+		if err := scanner.Err(); err != nil {
+			wailsruntime.EventsEmit(ctx, "backup:log", fmt.Sprintf("Error reading stderr: %v", err))
+		}
 	}()
 
 	// Stream stdout logs
@@ -133,6 +136,9 @@ func RunPgDump(ctx context.Context, conn models.Connection, opts BackupOptions) 
 		for scanner.Scan() {
 			line := scanner.Text()
 			wailsruntime.EventsEmit(ctx, "backup:log", line)
+		}
+		if err := scanner.Err(); err != nil {
+			wailsruntime.EventsEmit(ctx, "backup:log", fmt.Sprintf("Error reading stdout: %v", err))
 		}
 	}()
 

@@ -599,6 +599,17 @@ async function renderTable(result: QueryResult) {
     resizableColumns: true,
     headerSortTristate: true,
     placeholder: 'No data',
+    dataLoaderLoading: `<div class="grid-loader" role="status" aria-label="Loading database records">
+      <div class="grid-loader__glow"></div>
+      <div class="grid-loader__orbital" aria-hidden="true">
+        <span class="grid-loader__ring grid-loader__ring--outer"></span>
+        <span class="grid-loader__ring grid-loader__ring--inner"></span>
+        <span class="grid-loader__core"></span>
+      </div>
+      <div class="grid-loader__title">Synchronizing data</div>
+      <div class="grid-loader__subtitle">Reading database records</div>
+      <div class="grid-loader__progress" aria-hidden="true"><span></span></div>
+    </div>`,
   }
 
   if (props.tab && props.tab.type === 'table') {
