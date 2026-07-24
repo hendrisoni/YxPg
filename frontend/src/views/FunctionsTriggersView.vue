@@ -199,11 +199,18 @@
               </h3>
             </div>
 
-            <button @click="copyDdl"
-              class="px-2.5 py-1 text-[11px] border border-navy-border rounded text-text-secondary hover:bg-navy-hover hover:text-text-primary transition-colors flex items-center gap-1.5 cursor-pointer">
-              <Copy class="w-3.5 h-3.5" />
-              <span>Copy SQL</span>
-            </button>
+            <div class="flex items-center gap-2">
+              <button @click="openInNewTab"
+                class="px-2.5 py-1 text-[11px] border border-navy-border rounded text-text-secondary hover:bg-navy-hover hover:text-text-primary transition-colors flex items-center gap-1.5 cursor-pointer">
+                <ExternalLink class="w-3.5 h-3.5" />
+                <span>Open in Tab</span>
+              </button>
+              <button @click="copyDdl"
+                class="px-2.5 py-1 text-[11px] border border-navy-border rounded text-text-secondary hover:bg-navy-hover hover:text-text-primary transition-colors flex items-center gap-1.5 cursor-pointer">
+                <Copy class="w-3.5 h-3.5" />
+                <span>Copy SQL</span>
+              </button>
+            </div>
           </div>
 
           <div class="flex-1 w-full overflow-hidden min-h-0 bg-[#121212] relative">
@@ -230,6 +237,7 @@
 import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useConnectionsStore } from '../stores/connections'
 import { useUiStore } from '../stores/ui'
+import { useTabsStore } from '../stores/tabs'
 import type { Tab } from '../types'
 import {
   ChevronRight,
@@ -238,7 +246,8 @@ import {
   Cpu,
   Search,
   RefreshCw,
-  Copy
+  Copy,
+  ExternalLink
 } from 'lucide-vue-next'
 
 const props = defineProps<{
@@ -247,6 +256,7 @@ const props = defineProps<{
 
 const connectionsStore = useConnectionsStore()
 const uiStore = useUiStore()
+const tabsStore = useTabsStore()
 
 const loading = ref(false)
 const selectedConnectionId = ref<string>('')
@@ -435,6 +445,19 @@ function copyDdl() {
     type: 'info',
     title: 'Copied',
     message: 'SQL definition copied to clipboard'
+  })
+}
+
+function openInNewTab() {
+  if (!previewCode.value || !selectedItem.value) return
+  
+  const typeName = selectedType.value === 'trigger' ? selectedItem.value.trigger_name : selectedItem.value.function_name
+  const schemaName = selectedItem.value.schema_name
+
+  tabsStore.createTab('query', {
+    title: `${schemaName}.${typeName}`,
+    sql: previewCode.value,
+    connectionId: selectedConnectionId.value
   })
 }
 
