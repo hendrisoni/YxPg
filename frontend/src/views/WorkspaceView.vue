@@ -15,6 +15,7 @@
         @open-referential="handleOpenReferential"
         @open-functions-triggers="handleOpenFunctionsTriggers"
         @open-maintenance="handleOpenMaintenance"
+        @open-table-index-size="handleOpenTableIndexSize"
       />
 
       <!-- Resize Handle -->
@@ -31,50 +32,57 @@
         <!-- Tab content -->
         <div class="flex-1 overflow-hidden">
           <HomeView v-if="!tabsStore.activeTab" />
-          <QueryView
-            v-else-if="tabsStore.activeTab.type === 'query'"
-            :tab="tabsStore.activeTab"
-            :key="'query-' + tabsStore.activeTab.id"
-          />
-          <TableView
-            v-else-if="tabsStore.activeTab.type === 'table'"
-            :tab="tabsStore.activeTab"
-            :key="'table-' + tabsStore.activeTab.id"
-          />
-          <BuilderView
-            v-else-if="tabsStore.activeTab.type === 'builder'"
-            :tab="tabsStore.activeTab"
-            :key="'builder-' + tabsStore.activeTab.id"
-          />
-          <DDLView
-            v-else-if="tabsStore.activeTab.type === 'ddl'"
-            :tab="tabsStore.activeTab"
-            :key="'ddl-' + tabsStore.activeTab.id"
-          />
-          <QueryLogView
-            v-else-if="tabsStore.activeTab.type === 'log'"
-            :key="'log-' + tabsStore.activeTab.id"
-          />
-          <BackupView
-            v-else-if="tabsStore.activeTab.type === 'backup'"
-            :tab="tabsStore.activeTab"
-            :key="'backup-' + tabsStore.activeTab.id"
-          />
-          <MaintenanceView
-            v-else-if="tabsStore.activeTab.type === 'maintenance'"
-            :tab="tabsStore.activeTab"
-            :key="'maintenance-' + tabsStore.activeTab.id"
-          />
-          <ReferentialView
-            v-else-if="tabsStore.activeTab.type === 'referential'"
-            :tab="tabsStore.activeTab"
-            :key="'referential-' + tabsStore.activeTab.id"
-          />
-          <FunctionsTriggersView
-            v-else-if="tabsStore.activeTab.type === 'functions-triggers'"
-            :tab="tabsStore.activeTab"
-            :key="'functions-triggers-' + tabsStore.activeTab.id"
-          />
+          <KeepAlive v-else>
+            <QueryView
+              v-if="tabsStore.activeTab.type === 'query'"
+              :tab="tabsStore.activeTab"
+              :key="'query-' + tabsStore.activeTab.id"
+            />
+            <TableView
+              v-else-if="tabsStore.activeTab.type === 'table'"
+              :tab="tabsStore.activeTab"
+              :key="'table-' + tabsStore.activeTab.id"
+            />
+            <BuilderView
+              v-else-if="tabsStore.activeTab.type === 'builder'"
+              :tab="tabsStore.activeTab"
+              :key="'builder-' + tabsStore.activeTab.id"
+            />
+            <DDLView
+              v-else-if="tabsStore.activeTab.type === 'ddl'"
+              :tab="tabsStore.activeTab"
+              :key="'ddl-' + tabsStore.activeTab.id"
+            />
+            <QueryLogView
+              v-else-if="tabsStore.activeTab.type === 'log'"
+              :key="'log-' + tabsStore.activeTab.id"
+            />
+            <BackupView
+              v-else-if="tabsStore.activeTab.type === 'backup'"
+              :tab="tabsStore.activeTab"
+              :key="'backup-' + tabsStore.activeTab.id"
+            />
+            <MaintenanceView
+              v-else-if="tabsStore.activeTab.type === 'maintenance'"
+              :tab="tabsStore.activeTab"
+              :key="'maintenance-' + tabsStore.activeTab.id"
+            />
+            <ReferentialView
+              v-else-if="tabsStore.activeTab.type === 'referential'"
+              :tab="tabsStore.activeTab"
+              :key="'referential-' + tabsStore.activeTab.id"
+            />
+            <FunctionsTriggersView
+              v-else-if="tabsStore.activeTab.type === 'functions-triggers'"
+              :tab="tabsStore.activeTab"
+              :key="'functions-triggers-' + tabsStore.activeTab.id"
+            />
+            <TableIndexSizeView
+              v-else-if="tabsStore.activeTab.type === 'table-index-size'"
+              :tab="tabsStore.activeTab"
+              :key="'table-index-size-' + tabsStore.activeTab.id"
+            />
+          </KeepAlive>
         </div>
       </div>
     </div>
@@ -156,6 +164,7 @@ import BackupView from './BackupView.vue'
 import MaintenanceView from './MaintenanceView.vue'
 import ReferentialView from './ReferentialView.vue'
 import FunctionsTriggersView from './FunctionsTriggersView.vue'
+import TableIndexSizeView from './TableIndexSizeView.vue'
 import { useWorkspaceStore } from '../stores/workspace'
 
 const connectionsStore = useConnectionsStore()
@@ -287,6 +296,22 @@ function handleOpenFunctionsTriggers() {
   }
   tabsStore.createTab('functions-triggers', {
     title: 'Functions & Triggers',
+    connectionId: connId,
+  })
+}
+
+function handleOpenTableIndexSize() {
+  const connId = connectionsStore.currentConnectionId
+  if (!connId) {
+    uiStore.addNotification({
+      type: 'warning',
+      title: 'No Connection',
+      message: 'Please connect to a database to open Table & Index Size'
+    })
+    return
+  }
+  tabsStore.createTab('table-index-size', {
+    title: 'Table & Index Size',
     connectionId: connId,
   })
 }

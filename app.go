@@ -246,6 +246,12 @@ func (a *App) GetFullSchema(connID string) (map[string]interface{}, error) {
 	return a.inspector.GetFullSchema(a.ctx, connID)
 }
 
+// GetTableIndexSizes returns table and index size statistics
+func (a *App) GetTableIndexSizes(connID, schemaName string) ([]models.TableIndexSizeInfo, error) {
+	return a.inspector.GetTableIndexSizes(a.ctx, connID, schemaName)
+}
+
+
 // ==================== QUERY METHODS ====================
 
 // ExecuteQuery executes a SQL query

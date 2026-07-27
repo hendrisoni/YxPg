@@ -48,7 +48,8 @@ type ExplainNode struct {
 	NodeType            string         `json:"node_type"`
 	RelationName        string         `json:"relation_name,omitempty"`
 	Alias               string         `json:"alias,omitempty"`
-	_startupCost        float64        `json:"startup_cost"`
+	StartupCost         float64        `json:"startup_cost"`
+
 	TotalCost           float64        `json:"total_cost"`
 	PlanRows            int            `json:"plan_rows"`
 	PlanWidth           int            `json:"plan_width"`

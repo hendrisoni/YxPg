@@ -158,6 +158,10 @@ export function GetTableDDL(arg1, arg2, arg3) {
   return window['go']['main']['App']['GetTableDDL'](arg1, arg2, arg3);
 }
 
+export function GetTableIndexSizes(arg1, arg2) {
+  return window['go']['main']['App']['GetTableIndexSizes'](arg1, arg2);
+}
+
 export function GetTables(arg1, arg2) {
   return window['go']['main']['App']['GetTables'](arg1, arg2);
 }

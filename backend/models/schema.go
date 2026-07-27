@@ -97,3 +97,24 @@ type TypeInfo struct {
 	Type   string   `json:"type"`             // enum, composite, range, etc.
 	Values []string `json:"values,omitempty"` // for enums
 }
+
+// TableIndexSizeInfo represents size metrics for a table and its indexes
+type TableIndexSizeInfo struct {
+	Schema     string          `json:"schema"`
+	TableName  string          `json:"table_name"`
+	RowCount   int64           `json:"row_count"`
+	TableBytes int64           `json:"table_bytes"`
+	IndexBytes int64           `json:"index_bytes"`
+	TotalBytes int64           `json:"total_bytes"`
+	Indexes    []IndexSizeInfo `json:"indexes,omitempty"`
+}
+
+// IndexSizeInfo represents size metrics for a specific index
+type IndexSizeInfo struct {
+	IndexName  string `json:"index_name"`
+	TableName  string `json:"table_name"`
+	Schema     string `json:"schema"`
+	IndexBytes int64  `json:"index_bytes"`
+	IndexType  string `json:"index_type,omitempty"`
+}
+

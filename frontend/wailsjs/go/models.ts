@@ -559,6 +559,26 @@ export namespace models {
 	        this.definition = source["definition"];
 	    }
 	}
+	export class IndexSizeInfo {
+	    index_name: string;
+	    table_name: string;
+	    schema: string;
+	    index_bytes: number;
+	    index_type?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new IndexSizeInfo(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.index_name = source["index_name"];
+	        this.table_name = source["table_name"];
+	        this.schema = source["schema"];
+	        this.index_bytes = source["index_bytes"];
+	        this.index_type = source["index_type"];
+	    }
+	}
 	export class QueryHistoryEntry {
 	    id: number;
 	    connection_id: string;
@@ -750,6 +770,48 @@ export namespace models {
 	        this.columns = this.convertValues(source["columns"], ColumnDefinition);
 	        this.indexes = this.convertValues(source["indexes"], IndexDefinition);
 	        this.foreign_keys = this.convertValues(source["foreign_keys"], FKDefinition);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class TableIndexSizeInfo {
+	    schema: string;
+	    table_name: string;
+	    row_count: number;
+	    table_bytes: number;
+	    index_bytes: number;
+	    total_bytes: number;
+	    indexes?: IndexSizeInfo[];
+	
+	    static createFrom(source: any = {}) {
+	        return new TableIndexSizeInfo(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.schema = source["schema"];
+	        this.table_name = source["table_name"];
+	        this.row_count = source["row_count"];
+	        this.table_bytes = source["table_bytes"];
+	        this.index_bytes = source["index_bytes"];
+	        this.total_bytes = source["total_bytes"];
+	        this.indexes = this.convertValues(source["indexes"], IndexSizeInfo);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {

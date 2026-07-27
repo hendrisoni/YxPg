@@ -607,7 +607,101 @@ func (i *Inspector) GetFullSchema(ctx context.Context, connID string) (map[strin
 	return result, nil
 }
 
+// GetTableIndexSizes returns size statistics for tables and indexes in a schema (or all schemas if schema is "")
+func (i *Inspector) GetTableIndexSizes(ctx context.Context, connID string, schema string) ([]models.TableIndexSizeInfo, error) {
+	pool, err := i.manager.GetPool(connID)
+	if err != nil {
+		return nil, err
+	}
+
+	query := `
+		SELECT
+			n.nspname AS schema_name,
+			c.relname AS table_name,
+			COALESCE(c.reltuples::bigint, 0) AS row_count,
+			pg_relation_size(c.oid) AS table_bytes,
+			pg_indexes_size(c.oid) AS index_bytes,
+			pg_total_relation_size(c.oid) AS total_bytes
+		FROM pg_class c
+		JOIN pg_namespace n ON n.oid = c.relnamespace
+		WHERE c.relkind IN ('r', 'p')
+			AND n.nspname NOT IN ('pg_catalog', 'information_schema', 'pg_toast')
+	`
+
+	args := []interface{}{}
+	if schema != "" {
+		query += " AND n.nspname = $1"
+		args = append(args, schema)
+	}
+
+	query += " ORDER BY pg_total_relation_size(c.oid) DESC, c.relname ASC"
+
+	rows, err := pool.Query(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query table index sizes: %w", err)
+	}
+	defer rows.Close()
+
+	var result []models.TableIndexSizeInfo
+	for rows.Next() {
+		var item models.TableIndexSizeInfo
+		if err := rows.Scan(&item.Schema, &item.TableName, &item.RowCount, &item.TableBytes, &item.IndexBytes, &item.TotalBytes); err != nil {
+			return nil, err
+		}
+		result = append(result, item)
+	}
+
+	if rows.Err() != nil {
+		return nil, rows.Err()
+	}
+
+	// Fetch index breakdown for each table
+	idxQuery := `
+		SELECT
+			n.nspname AS schema_name,
+			t.relname AS table_name,
+			i.relname AS index_name,
+			pg_relation_size(i.oid) AS index_bytes,
+			am.amname AS index_type
+		FROM pg_class t
+		JOIN pg_index ix ON t.oid = ix.indrelid
+		JOIN pg_class i ON ix.indexrelid = i.oid
+		JOIN pg_am am ON i.relam = am.oid
+		JOIN pg_namespace n ON t.relnamespace = n.oid
+		WHERE n.nspname NOT IN ('pg_catalog', 'information_schema', 'pg_toast')
+	`
+	idxArgs := []interface{}{}
+	if schema != "" {
+		idxQuery += " AND n.nspname = $1"
+		idxArgs = append(idxArgs, schema)
+	}
+	idxQuery += " ORDER BY pg_relation_size(i.oid) DESC"
+
+	idxRows, err := pool.Query(ctx, idxQuery, idxArgs...)
+	if err == nil {
+		defer idxRows.Close()
+		indexMap := make(map[string][]models.IndexSizeInfo)
+		for idxRows.Next() {
+			var idx models.IndexSizeInfo
+			if err := idxRows.Scan(&idx.Schema, &idx.TableName, &idx.IndexName, &idx.IndexBytes, &idx.IndexType); err == nil {
+				key := idx.Schema + "." + idx.TableName
+				indexMap[key] = append(indexMap[key], idx)
+			}
+		}
+
+		for idx := range result {
+			key := result[idx].Schema + "." + result[idx].TableName
+			if indexes, exists := indexMap[key]; exists {
+				result[idx].Indexes = indexes
+			}
+		}
+	}
+
+	return result, nil
+}
+
 // Helper: ensure pool exists
 func ensurePool(manager *connection.Manager, connID string) (*pgxpool.Pool, error) {
 	return manager.GetPool(connID)
 }
+

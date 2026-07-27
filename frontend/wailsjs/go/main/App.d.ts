@@ -82,6 +82,8 @@ export function GetSequences(arg1:string,arg2:string):Promise<Array<models.Seque
 
 export function GetTableDDL(arg1:string,arg2:string,arg3:string):Promise<string>;
 
+export function GetTableIndexSizes(arg1:string,arg2:string):Promise<Array<models.TableIndexSizeInfo>>;
+
 export function GetTables(arg1:string,arg2:string):Promise<Array<models.TableInfo>>;
 
 export function GetTimestamp():Promise<string>;

@@ -235,11 +235,29 @@ export interface FKReference {
   on_delete: string
 }
 
+export interface TableIndexSizeInfo {
+  schema: string
+  table_name: string
+  row_count: number
+  table_bytes: number
+  index_bytes: number
+  total_bytes: number
+  indexes?: IndexSizeInfo[]
+}
+
+export interface IndexSizeInfo {
+  index_name: string
+  table_name: string
+  schema: string
+  index_bytes: number
+  index_type?: string
+}
+
 // UI Types
 export interface Tab {
   id: string
   title: string
-  type: 'query' | 'table' | 'builder' | 'ddl' | 'home' | 'log' | 'backup' | 'referential' | 'functions-triggers' | 'maintenance'
+  type: 'query' | 'table' | 'builder' | 'ddl' | 'home' | 'log' | 'backup' | 'referential' | 'functions-triggers' | 'maintenance' | 'table-index-size'
   connectionId?: string
   schema?: string
   table?: string
@@ -247,6 +265,7 @@ export interface Tab {
   modified?: boolean
   data?: any
 }
+
 
 export interface TreeNode {
   id: string

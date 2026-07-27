@@ -58,6 +58,18 @@
           </svg>
         </button>
 
+        <!-- Table & Index Size Button -->
+        <button @click="$emit('openTableIndexSize')"
+          class="p-2 rounded-lg text-text-secondary hover:text-teal-accent hover:bg-navy-hover transition-colors cursor-pointer"
+          title="Table & Index Size">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="20" x2="18" y2="10" />
+            <line x1="12" y1="20" x2="12" y2="4" />
+            <line x1="6" y1="20" x2="6" y2="14" />
+          </svg>
+        </button>
+
+
 
       </div>
 
@@ -220,7 +232,8 @@ import type { TreeNode } from '../../types'
 import SchemaTreeNode from '../schema/SchemaTreeNode.vue'
 import Modal from '../shared/Modal.vue'
 
-const emit = defineEmits(['toggle', 'newConnection', 'searchTable', 'openSettings', 'openWorkspace', 'openBackup', 'addCategory', 'openReferential', 'openFunctionsTriggers', 'openMaintenance'])
+const emit = defineEmits(['toggle', 'newConnection', 'searchTable', 'openSettings', 'openWorkspace', 'openBackup', 'addCategory', 'openReferential', 'openFunctionsTriggers', 'openMaintenance', 'openTableIndexSize'])
+
 
 const connectionsStore = useConnectionsStore()
 const workspaceStore = useWorkspaceStore()

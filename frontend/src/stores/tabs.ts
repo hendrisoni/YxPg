@@ -168,7 +168,9 @@ export const useTabsStore = defineStore('tabs', () => {
       case 'maintenance': return 'Maintenance'
       case 'referential': return 'Referential Integrity'
       case 'functions-triggers': return 'Functions & Triggers'
+      case 'table-index-size': return 'Table & Index Size'
       default: return 'Untitled'
+
     }
   }
 
