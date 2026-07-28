@@ -152,7 +152,7 @@
         <!-- Workspace Tree -->
         <div v-else-if="filteredTree.length > 0">
           <SchemaTreeNode v-for="node in filteredTree" :key="node.id" :node="node" :level="0"
-            :selected-node-id="selectedNodeId" @select-node="selectedNodeId = $event" @open-table="handleOpenTable"
+            :selected-node-ids="selectedNodeIds" @select-node="handleSelectNode" @open-table="handleOpenTable"
             @open-query="handleOpenQuery" @copy-name="handleCopyName" @copy-select="handleCopySelect"
             @view-ddl="handleViewDDL" @drop-table="handleDropTable" @delete-node="handleDeleteNode"
             @rename-node="handleRenameNode" />
@@ -242,8 +242,55 @@ const uiStore = useUiStore()
 
 const searchQuery = ref('')
 const isAllExpanded = ref(false)
-const selectedNodeId = ref<string | null>(null)
+const selectedNodeIds = ref<string[]>([])
+const lastSelectedNodeId = ref<string | null>(null)
 const sidebarWidth = computed(() => uiStore.sidebarWidth)
+
+function getVisibleNodes(nodes: TreeNode[]): TreeNode[] {
+  const result: TreeNode[] = []
+  for (const node of nodes) {
+    result.push(node)
+    if (node.expanded !== false && node.children && node.children.length > 0) {
+      result.push(...getVisibleNodes(node.children))
+    }
+  }
+  return result
+}
+
+function handleSelectNode(nodeId: string, event?: MouseEvent) {
+  if (event && event.shiftKey && lastSelectedNodeId.value) {
+    const visible = getVisibleNodes(filteredTree.value)
+    const startIndex = visible.findIndex(n => n.id === lastSelectedNodeId.value)
+    const endIndex = visible.findIndex(n => n.id === nodeId)
+
+    if (startIndex !== -1 && endIndex !== -1) {
+      const min = Math.min(startIndex, endIndex)
+      const max = Math.max(startIndex, endIndex)
+      const rangeIds = visible.slice(min, max + 1).map(n => n.id)
+
+      const newSet = new Set(selectedNodeIds.value)
+      for (const id of rangeIds) {
+        newSet.add(id)
+      }
+      selectedNodeIds.value = Array.from(newSet)
+      return
+    }
+  }
+
+  if (event && (event.ctrlKey || event.metaKey)) {
+    const index = selectedNodeIds.value.indexOf(nodeId)
+    if (index > -1) {
+      selectedNodeIds.value.splice(index, 1)
+    } else {
+      selectedNodeIds.value.push(nodeId)
+    }
+    lastSelectedNodeId.value = nodeId
+    return
+  }
+
+  selectedNodeIds.value = [nodeId]
+  lastSelectedNodeId.value = nodeId
+}
 
 const isCategoryModalOpen = ref(false)
 const categoryModalMode = ref<'add' | 'rename'>('add')
@@ -299,9 +346,23 @@ async function handleAddCategory() {
 }
 
 function handleRootDrop(event: DragEvent) {
-  const nodeId = event.dataTransfer?.getData('text/plain')
-  if (nodeId) {
-    workspaceStore.moveNode(nodeId, null)
+  const rawData = event.dataTransfer?.getData('text/plain')
+  if (!rawData) return
+
+  let nodeIds: string[] = []
+  try {
+    const parsed = JSON.parse(rawData)
+    if (Array.isArray(parsed)) {
+      nodeIds = parsed.map(String)
+    } else {
+      nodeIds = [String(parsed)]
+    }
+  } catch (e) {
+    nodeIds = [rawData]
+  }
+
+  if (nodeIds.length > 0) {
+    workspaceStore.moveNodes(nodeIds, null)
   }
 }
 

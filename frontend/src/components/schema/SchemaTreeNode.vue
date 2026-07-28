@@ -6,7 +6,7 @@
     <div
       class="flex items-center gap-1 pl-2 pr-12 py-1 cursor-pointer hover:bg-navy-hover transition-colors group relative border-l-2"
       :class="[
-        node.id === selectedNodeId ? 'bg-navy-hover border-teal-accent text-text-primary' : 'border-transparent text-text-secondary',
+        isSelected ? 'bg-navy-hover border-teal-accent text-text-primary font-medium' : 'border-transparent text-text-secondary',
         dragOver && node.type === 'category' ? 'bg-teal-accent/10 border-teal-accent' : ''
       ]"
       :style="{ paddingLeft: (level * 16 + 8) + 'px' }"
@@ -16,7 +16,7 @@
       @dragenter="handleDragEnter($event)"
       @dragleave="handleDragLeave($event)"
       @drop="handleDrop($event, node.id)"
-      @click="handleSelect"
+      @click="handleSelect($event)"
       @dblclick="handleDoubleClick"
       @contextmenu.prevent="showContextMenu"
       :title="node.data ? `${node.data.connectionName || 'Database'} / ${node.data.database}.${node.data.schema}` : node.label"
@@ -43,10 +43,6 @@
       <span class="text-xs truncate flex-1" :class="labelColor">
         {{ node.label }}
       </span>
-
-
-      
-     
 
       <!-- Delete hover button -->
       <button
@@ -76,8 +72,8 @@
         :key="child.id"
         :node="child"
         :level="level + 1"
-        :selected-node-id="selectedNodeId"
-        @select-node="$emit('select-node', $event)"
+        :selected-node-ids="selectedNodeIds"
+        @select-node="(id, event) => $emit('select-node', id, event)"
         @open-table="(schema, name, connId) => $emit('open-table', schema, name, connId)"
         @open-query="(schema, name, connId) => $emit('open-query', schema, name, connId)"
         @copy-name="$emit('copy-name', $event)"
@@ -114,7 +110,7 @@ import type { ContextMenuItem } from '../shared/ContextMenu.vue'
 const props = defineProps<{
   node: TreeNode
   level: number
-  selectedNodeId?: string | null
+  selectedNodeIds?: string[]
 }>()
 
 const emit = defineEmits([
@@ -147,6 +143,10 @@ const menuY = ref(0)
 
 const hasChildren = computed(() => {
   return props.node.children && props.node.children.length > 0
+})
+
+const isSelected = computed(() => {
+  return props.selectedNodeIds ? props.selectedNodeIds.includes(props.node.id) : false
 })
 
 function toggleExpand() {
@@ -232,10 +232,9 @@ const labelColor = computed(() => {
   return 'text-text-secondary'
 })
 
-
 // Selection & double-click
-function handleSelect() {
-  emit('select-node', props.node.id)
+function handleSelect(event: MouseEvent) {
+  emit('select-node', props.node.id, event)
 }
 
 function handleDoubleClick() {
@@ -254,7 +253,15 @@ function handleDoubleClick() {
 
 // Drag & Drop
 function handleDragStart(event: DragEvent, id: string) {
-  event.dataTransfer?.setData('text/plain', id)
+  let idsToDrag = props.selectedNodeIds ? [...props.selectedNodeIds] : []
+  if (!idsToDrag.includes(id)) {
+    idsToDrag = [id]
+    emit('select-node', id, event)
+  }
+
+  const payload = JSON.stringify(idsToDrag)
+  event.dataTransfer?.setData('text/plain', payload)
+
   if (props.node.type === 'table' || props.node.type === 'view') {
     const tableData = {
       id: props.node.id,
@@ -303,14 +310,29 @@ function handleWrapperDragOver(event: DragEvent) {
   }
 }
 
+function parseDroppedNodeIds(event: DragEvent): string[] {
+  const rawData = event.dataTransfer?.getData('text/plain')
+  if (!rawData) return []
+
+  try {
+    const parsed = JSON.parse(rawData)
+    if (Array.isArray(parsed)) {
+      return parsed.map(String)
+    }
+    return [String(parsed)]
+  } catch (e) {
+    return [rawData]
+  }
+}
+
 function handleWrapperDrop(event: DragEvent) {
   if (props.node.type !== 'category') return
   event.preventDefault()
   event.stopPropagation()
   dragOver.value = false
-  const nodeId = event.dataTransfer?.getData('text/plain')
-  if (nodeId && nodeId !== props.node.id) {
-    workspaceStore.moveNode(nodeId, props.node.id)
+  const nodeIds = parseDroppedNodeIds(event)
+  if (nodeIds.length > 0) {
+    workspaceStore.moveNodes(nodeIds, props.node.id)
   }
 }
 
@@ -319,9 +341,9 @@ function handleDrop(event: DragEvent, targetId: string) {
   event.preventDefault()
   event.stopPropagation()
   dragOver.value = false
-  const nodeId = event.dataTransfer?.getData('text/plain')
-  if (nodeId && nodeId !== targetId) {
-    workspaceStore.moveNode(nodeId, targetId)
+  const nodeIds = parseDroppedNodeIds(event)
+  if (nodeIds.length > 0) {
+    workspaceStore.moveNodes(nodeIds, targetId)
   }
 }
 

@@ -130,28 +130,43 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     await saveWorkspace()
   }
 
-  // Move a node to a target category (or root if targetCategoryId is null)
-  async function moveNode(nodeId: string, targetCategoryId: string | null) {
-    // 1. Remove node from its current place
-    const node = removeNodeById(workspaceTree.value, nodeId)
-    if (!node) return
+  // Move multiple nodes to a target category (or root if targetCategoryId is null)
+  async function moveNodes(nodeIds: string[], targetCategoryId: string | null) {
+    if (!nodeIds || nodeIds.length === 0) return
 
-    // 2. Add to new place
+    const validIds = nodeIds.filter(id => id !== targetCategoryId)
+    if (validIds.length === 0) return
+
+    const nodesToMove: TreeNode[] = []
+    for (const id of validIds) {
+      const node = removeNodeById(workspaceTree.value, id)
+      if (node) {
+        nodesToMove.push(node)
+      }
+    }
+
+    if (nodesToMove.length === 0) return
+
     if (targetCategoryId === null) {
-      workspaceTree.value.push(node)
+      workspaceTree.value.push(...nodesToMove)
     } else {
       const targetCategory = findNodeById(workspaceTree.value, targetCategoryId)
       if (targetCategory && targetCategory.type === 'category') {
         if (!targetCategory.children) {
           targetCategory.children = []
         }
-        targetCategory.children.push(node)
+        targetCategory.children.push(...nodesToMove)
+        targetCategory.expanded = true
       } else {
-        // Fallback: put back at root if category not found
-        workspaceTree.value.push(node)
+        workspaceTree.value.push(...nodesToMove)
       }
     }
     await saveWorkspace()
+  }
+
+  // Move a node to a target category (or root if targetCategoryId is null)
+  async function moveNode(nodeId: string, targetCategoryId: string | null) {
+    await moveNodes([nodeId], targetCategoryId)
   }
 
   // Fetch the active database catalog (for Ctrl+K palette)
@@ -178,6 +193,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     renameNode,
     deleteNode,
     moveNode,
+    moveNodes,
     fetchCatalog,
   }
 })
