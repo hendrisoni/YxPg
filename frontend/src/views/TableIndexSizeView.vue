@@ -23,7 +23,7 @@
           <label class="text-xs text-text-secondary">Conn:</label>
           <select
             v-model="selectedConnId"
-            @change="loadData(true)"
+            @change="onConnChange"
             class="text-xs bg-navy-tertiary border border-navy-border rounded px-2 py-1 text-text-primary focus:border-teal-accent focus:outline-none cursor-pointer"
           >
             <option v-for="conn in connectionsStore.connections" :key="conn.id" :value="conn.id">
@@ -666,6 +666,19 @@ watch(() => props.tab.connectionId, (newConnId) => {
     loadData(false)
   }
 })
+
+watch(selectedConnId, (newConnId) => {
+  if (newConnId && props.tab && props.tab.id && props.tab.connectionId !== newConnId) {
+    tabsStore.updateTab(props.tab.id, { connectionId: newConnId })
+  }
+})
+
+function onConnChange() {
+  if (props.tab && props.tab.id && selectedConnId.value) {
+    tabsStore.updateTab(props.tab.id, { connectionId: selectedConnId.value })
+  }
+  loadData(true)
+}
 
 async function loadData(forceRefresh = false) {
   if (!selectedConnId.value) {
