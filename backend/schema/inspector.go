@@ -611,7 +611,13 @@ func (i *Inspector) GetFullSchema(ctx context.Context, connID string) (map[strin
 func (i *Inspector) GetTableIndexSizes(ctx context.Context, connID string, schema string) ([]models.TableIndexSizeInfo, error) {
 	pool, err := i.manager.GetPool(connID)
 	if err != nil {
-		return nil, err
+		if connectErr := i.manager.Connect(connID); connectErr != nil {
+			return nil, fmt.Errorf("connection '%s' is not active and connection attempt failed: %w", connID, connectErr)
+		}
+		pool, err = i.manager.GetPool(connID)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	query := `
