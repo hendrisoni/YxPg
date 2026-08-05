@@ -106,6 +106,10 @@ export function GetDatabases(arg1) {
   return window['go']['main']['App']['GetDatabases'](arg1);
 }
 
+export function GetDbPath() {
+  return window['go']['main']['App']['GetDbPath']();
+}
+
 export function GetDefaultConnectionConfig() {
   return window['go']['main']['App']['GetDefaultConnectionConfig']();
 }
@@ -198,6 +202,10 @@ export function OpenFolder(arg1) {
   return window['go']['main']['App']['OpenFolder'](arg1);
 }
 
+export function RefreshDb() {
+  return window['go']['main']['App']['RefreshDb']();
+}
+
 export function RefreshSchema(arg1) {
   return window['go']['main']['App']['RefreshSchema'](arg1);
 }
@@ -216,6 +224,14 @@ export function SaveQuery(arg1, arg2) {
 
 export function SaveWorkspace(arg1) {
   return window['go']['main']['App']['SaveWorkspace'](arg1);
+}
+
+export function SelectDbFile() {
+  return window['go']['main']['App']['SelectDbFile']();
+}
+
+export function SetDbPath(arg1) {
+  return window['go']['main']['App']['SetDbPath'](arg1);
 }
 
 export function StartBackup(arg1) {

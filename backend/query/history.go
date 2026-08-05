@@ -5,46 +5,48 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sync"
 	"time"
 
 	"yxpg/backend/models"
 
-	_ "github.com/mattn/go-sqlite3"
+	_ "modernc.org/sqlite"
 )
 
 // History manages query history using SQLite
 type History struct {
+	mu sync.RWMutex
 	db *sql.DB
 }
 
-// NewHistory creates a new history manager
-func NewHistory() (*History, error) {
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		return nil, err
-	}
-
-	configDir := filepath.Join(homeDir, ".yxpg")
-	if err := os.MkdirAll(configDir, 0755); err != nil {
-		return nil, err
-	}
-
-	dbPath := filepath.Join(configDir, "history.db")
-	db, err := sql.Open("sqlite3", dbPath+"?_journal_mode=WAL")
-	if err != nil {
-		return nil, fmt.Errorf("failed to open history database: %w", err)
-	}
-
+// NewHistory creates a new history manager using the provided SQLite connection
+func NewHistory(db *sql.DB) (*History, error) {
 	h := &History{db: db}
-	if err := h.migrate(); err != nil {
-		db.Close()
+	if err := h.migrateAndImport(); err != nil {
 		return nil, err
 	}
-
 	return h, nil
 }
 
-func (h *History) migrate() error {
+// SetDB updates the database connection for history manager
+func (h *History) SetDB(db *sql.DB) error {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.db = db
+	return h.migrateAndImportLocked()
+}
+
+func (h *History) migrateAndImport() error {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	return h.migrateAndImportLocked()
+}
+
+func (h *History) migrateAndImportLocked() error {
+	if h.db == nil {
+		return fmt.Errorf("history database connection is nil")
+	}
+
 	queries := []string{
 		`CREATE TABLE IF NOT EXISTS query_history (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -71,15 +73,55 @@ func (h *History) migrate() error {
 
 	for _, q := range queries {
 		if _, err := h.db.Exec(q); err != nil {
-			return fmt.Errorf("migration failed: %w", err)
+			return fmt.Errorf("history migration failed: %w", err)
 		}
+	}
+
+	var count int
+	_ = h.db.QueryRow(`SELECT COUNT(*) FROM query_history`).Scan(&count)
+	if count == 0 {
+		h.importLegacyHistory()
 	}
 
 	return nil
 }
 
+func (h *History) importLegacyHistory() {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return
+	}
+
+	legacyPath := filepath.Join(homeDir, ".yxpg", "history.db")
+	if _, err := os.Stat(legacyPath); os.IsNotExist(err) {
+		return
+	}
+
+	cleanPath := filepath.ToSlash(legacyPath)
+	attachQuery := fmt.Sprintf("ATTACH DATABASE '%s' AS legacy_hist", cleanPath)
+	if _, err := h.db.Exec(attachQuery); err != nil {
+		return
+	}
+	defer func() {
+		_, _ = h.db.Exec("DETACH DATABASE legacy_hist")
+	}()
+
+	_, _ = h.db.Exec(`INSERT OR IGNORE INTO query_history (id, connection_id, database, sql, duration_ms, rows_returned, executed_at, error, bookmarked)
+		SELECT id, connection_id, database, sql, duration_ms, rows_returned, executed_at, error, bookmarked FROM legacy_hist.query_history`)
+
+	_, _ = h.db.Exec(`INSERT OR IGNORE INTO saved_queries (id, name, sql, folder, created_at, updated_at)
+		SELECT id, name, sql, folder, created_at, updated_at FROM legacy_hist.saved_queries`)
+}
+
 // Save saves a query history entry
 func (h *History) Save(entry models.QueryHistoryEntry) error {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+
+	if h.db == nil {
+		return nil
+	}
+
 	_, err := h.db.Exec(
 		`INSERT INTO query_history (connection_id, database, sql, duration_ms, rows_returned, executed_at, error)
 		 VALUES (?, ?, ?, ?, ?, ?, ?)`,
@@ -99,6 +141,13 @@ func (h *History) Save(entry models.QueryHistoryEntry) error {
 
 // ListByConnection returns history entries for a connection
 func (h *History) ListByConnection(connID string, limit int) ([]models.QueryHistoryEntry, error) {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+
+	if h.db == nil {
+		return []models.QueryHistoryEntry{}, nil
+	}
+
 	if limit <= 0 {
 		limit = 100
 	}
@@ -129,11 +178,22 @@ func (h *History) ListByConnection(connID string, limit int) ([]models.QueryHist
 		entries = append(entries, e)
 	}
 
+	if entries == nil {
+		entries = []models.QueryHistoryEntry{}
+	}
+
 	return entries, rows.Err()
 }
 
 // Search searches history by SQL text
 func (h *History) Search(query string, limit int) ([]models.QueryHistoryEntry, error) {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+
+	if h.db == nil {
+		return []models.QueryHistoryEntry{}, nil
+	}
+
 	if limit <= 0 {
 		limit = 100
 	}
@@ -164,17 +224,35 @@ func (h *History) Search(query string, limit int) ([]models.QueryHistoryEntry, e
 		entries = append(entries, e)
 	}
 
+	if entries == nil {
+		entries = []models.QueryHistoryEntry{}
+	}
+
 	return entries, rows.Err()
 }
 
 // ToggleBookmark toggles the bookmark status of a history entry
 func (h *History) ToggleBookmark(id int64) error {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+
+	if h.db == nil {
+		return nil
+	}
+
 	_, err := h.db.Exec(`UPDATE query_history SET bookmarked = NOT bookmarked WHERE id = ?`, id)
 	return err
 }
 
 // SaveQuery saves a named query
 func (h *History) SaveQuery(name, sql string) error {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+
+	if h.db == nil {
+		return nil
+	}
+
 	now := time.Now()
 	_, err := h.db.Exec(
 		`INSERT INTO saved_queries (name, sql, created_at, updated_at) VALUES (?, ?, ?, ?)`,
@@ -185,6 +263,13 @@ func (h *History) SaveQuery(name, sql string) error {
 
 // ListSavedQueries returns all saved queries
 func (h *History) ListSavedQueries() ([]models.SavedQuery, error) {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+
+	if h.db == nil {
+		return []models.SavedQuery{}, nil
+	}
+
 	query := "SELECT id, name, sql, folder, created_at, updated_at FROM saved_queries ORDER BY name"
 	rows, err := h.db.Query(query)
 	if err != nil {
@@ -201,10 +286,14 @@ func (h *History) ListSavedQueries() ([]models.SavedQuery, error) {
 		queries = append(queries, q)
 	}
 
+	if queries == nil {
+		queries = []models.SavedQuery{}
+	}
+
 	return queries, rows.Err()
 }
 
-// Close closes the database connection
+// Close closes the database connection (handled by storage)
 func (h *History) Close() error {
-	return h.db.Close()
+	return nil
 }

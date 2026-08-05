@@ -66,19 +66,22 @@ export const useUiStore = defineStore('ui', () => {
   // Settings state
   const settings = ref({
     showFunctionsInSearch: localStorage.getItem('settings:showFunctionsInSearch') !== 'false',
-    pgBinPath: ''
+    pgBinPath: '',
+    dbPath: ''
   })
 
   async function loadSettings() {
     try {
       const path = await App.GetPgBinPath()
       settings.value.pgBinPath = path || ''
+      const dbPath = await App.GetDbPath()
+      settings.value.dbPath = dbPath || ''
     } catch (e) {
-      console.error('Failed to load pgBinPath from config:', e)
+      console.error('Failed to load settings from config:', e)
     }
   }
 
-  function updateSetting(key: 'showFunctionsInSearch' | 'pgBinPath', value: any) {
+  function updateSetting(key: 'showFunctionsInSearch' | 'pgBinPath' | 'dbPath', value: any) {
     if (key === 'showFunctionsInSearch') {
       settings.value.showFunctionsInSearch = value
       localStorage.setItem(`settings:${key}`, String(value))
@@ -87,6 +90,49 @@ export const useUiStore = defineStore('ui', () => {
       App.SavePgBinPath(value).catch((e: any) => {
         console.error('Failed to save pgBinPath to config:', e)
       })
+    } else if (key === 'dbPath') {
+      settings.value.dbPath = value
+      App.SetDbPath(value).catch((e: any) => {
+        console.error('Failed to save dbPath:', e)
+      })
+    }
+  }
+
+  async function selectDbPath() {
+    try {
+      const selected = await App.SelectDbFile()
+      if (selected) {
+        settings.value.dbPath = selected
+        await saveAndRefreshDb(selected)
+      }
+    } catch (e: any) {
+      addNotification({
+        type: 'error',
+        title: 'Gagal Pilih Database',
+        message: e?.message || String(e)
+      })
+    }
+  }
+
+  async function saveAndRefreshDb(targetPath?: string) {
+    const p = targetPath || settings.value.dbPath
+    if (!p) return
+    try {
+      await App.SetDbPath(p)
+      const current = await App.GetDbPath()
+      settings.value.dbPath = current
+      addNotification({
+        type: 'success',
+        title: 'Database SQLite Berhasil Di-refresh',
+        message: `Aktif: ${current}`
+      })
+    } catch (e: any) {
+      addNotification({
+        type: 'error',
+        title: 'Gagal Refresh Database',
+        message: e?.message || String(e)
+      })
+      throw e
     }
   }
 
@@ -111,6 +157,8 @@ export const useUiStore = defineStore('ui', () => {
     settings,
     updateSetting,
     loadSettings,
+    selectDbPath,
+    saveAndRefreshDb,
   }
 }
 )

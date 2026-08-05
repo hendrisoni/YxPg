@@ -14,20 +14,23 @@ import (
 	"time"
 
 	"yxpg/backend/connection"
-	"yxpg/backend/ddl"
 	"yxpg/backend/dbexport"
+	"yxpg/backend/ddl"
 	"yxpg/backend/models"
 	"yxpg/backend/query"
 	"yxpg/backend/schema"
+	"yxpg/backend/storage"
 
 	"github.com/jackc/pgx/v5"
-	_ "github.com/mattn/go-sqlite3"
+	_ "modernc.org/sqlite"
 	wailsruntime "github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 // App struct
 type App struct {
 	ctx            context.Context
+	storage        *storage.Storage
+	store          *connection.Store
 	manager        *connection.Manager
 	inspector      *schema.Inspector
 	executor       *query.Executor
@@ -79,21 +82,34 @@ func NewApp() *App {
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
 
-	// Initialize connection manager
+	// Determine DB path
+	dbPath := a.GetDbPath()
+
 	var err error
-	a.manager, err = connection.NewManager()
+	a.storage, err = storage.NewStorage(dbPath)
 	if err != nil {
-		fmt.Printf("Failed to create connection manager: %v\n", err)
+		fmt.Printf("[Startup] Failed to initialize SQLite storage at %s: %v\n", dbPath, err)
 		return
 	}
+	_ = a.saveConfigValue("db_path", a.storage.Path())
+
+	// Initialize store
+	a.store, err = connection.NewStore(a.storage.DB())
+	if err != nil {
+		fmt.Printf("[Startup] Failed to create connection store: %v\n", err)
+		return
+	}
+
+	// Initialize connection manager
+	a.manager = connection.NewManager(a.store)
 
 	// Initialize schema inspector
 	a.inspector = schema.NewInspector(a.manager)
 
-	// Initialize query history (optional - gracefully skip if CGO unavailable)
-	a.history, err = query.NewHistory()
+	// Initialize query history
+	a.history, err = query.NewHistory(a.storage.DB())
 	if err != nil {
-		fmt.Printf("Warning: Query history disabled: %v\n", err)
+		fmt.Printf("[Startup] Warning: Query history disabled: %v\n", err)
 		a.history = nil
 	}
 
@@ -105,9 +121,9 @@ func (a *App) startup(ctx context.Context) {
 	a.builder = ddl.NewBuilder()
 
 	// Initialize workspace store
-	a.workspaceStore, err = connection.NewWorkspaceStore()
+	a.workspaceStore, err = connection.NewWorkspaceStore(a.storage.DB())
 	if err != nil {
-		fmt.Printf("Failed to create workspace store: %v\n", err)
+		fmt.Printf("[Startup] Failed to create workspace store: %v\n", err)
 	}
 
 	// Sync and connect on startup in background
@@ -133,6 +149,9 @@ func (a *App) shutdown(ctx context.Context) {
 	}
 	if a.history != nil {
 		a.history.Close()
+	}
+	if a.storage != nil {
+		a.storage.Close()
 	}
 }
 
@@ -471,6 +490,82 @@ func (a *App) GetPgBinPath() string {
 // SavePgBinPath updates pg_bin_path in configuration file yxpg.conf
 func (a *App) SavePgBinPath(path string) error {
 	return a.saveConfigValue("pg_bin_path", path)
+}
+
+// GetDbPath reads the active SQLite database path from memory or yxpg.conf
+func (a *App) GetDbPath() string {
+	if a.storage != nil && a.storage.Path() != "" {
+		return a.storage.Path()
+	}
+	config := a.loadConfigMap()
+	if path, ok := config["db_path"]; ok && strings.TrimSpace(path) != "" {
+		return path
+	}
+	return storage.GetDefaultDbPath()
+}
+
+// SelectDbFile opens a file dialog to pick/create SQLite database file (.sys)
+func (a *App) SelectDbFile() (string, error) {
+	return wailsruntime.OpenFileDialog(a.ctx, wailsruntime.OpenDialogOptions{
+		Title: "Pilih / Buat File Database SQLite (.sys)",
+		Filters: []wailsruntime.FileFilter{
+			{
+				DisplayName: "SQLite Database (*.sys;*.db;*.sqlite)",
+				Pattern:     "*.sys;*.db;*.sqlite",
+			},
+			{
+				DisplayName: "Semua File (*.*)",
+				Pattern:     "*.*",
+			},
+		},
+	})
+}
+
+// SetDbPath sets the active SQLite database path, re-opens the DB, and reloads data stores
+func (a *App) SetDbPath(path string) error {
+	path = strings.TrimSpace(path)
+	if path == "" {
+		return fmt.Errorf("path database tidak boleh kosong")
+	}
+
+	if a.storage == nil {
+		var err error
+		a.storage, err = storage.NewStorage(path)
+		if err != nil {
+			return err
+		}
+	} else {
+		if err := a.storage.Open(path); err != nil {
+			return err
+		}
+	}
+
+	_ = a.saveConfigValue("db_path", a.storage.Path())
+
+	db := a.storage.DB()
+	if a.store != nil {
+		if err := a.store.SetDB(db); err != nil {
+			return fmt.Errorf("failed to update connection store: %w", err)
+		}
+	}
+	if a.history != nil {
+		if err := a.history.SetDB(db); err != nil {
+			fmt.Printf("Warning: failed to update history store: %v\n", err)
+		}
+	}
+	if a.workspaceStore != nil {
+		if err := a.workspaceStore.SetDB(db); err != nil {
+			fmt.Printf("Warning: failed to update workspace store: %v\n", err)
+		}
+	}
+
+	return nil
+}
+
+// RefreshDb re-reads and re-opens the current SQLite database and data stores
+func (a *App) RefreshDb() error {
+	currentPath := a.GetDbPath()
+	return a.SetDbPath(currentPath)
 }
 
 // saveConfigValue writes or updates a configuration key in yxpg.conf

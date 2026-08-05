@@ -1,91 +1,167 @@
 package connection
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
 	"sync"
+	"time"
 
 	"yxpg/backend/models"
 
 	"github.com/google/uuid"
+	_ "modernc.org/sqlite"
 )
 
-// Store manages persistence of connection configurations to JSON file
+// Store manages persistence of connection configurations in SQLite
 type Store struct {
-	mu          sync.RWMutex
-	filePath    string
-	Connections []models.Connection
+	mu sync.RWMutex
+	db *sql.DB
 }
 
-// NewStore creates a new connection store
-func NewStore() (*Store, error) {
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
+// NewStore creates a new connection store backed by SQLite
+func NewStore(db *sql.DB) (*Store, error) {
+	store := &Store{db: db}
+	if err := store.initAndMigrate(); err != nil {
 		return nil, err
 	}
-
-	configDir := filepath.Join(homeDir, ".yxpg")
-	if err := os.MkdirAll(configDir, 0755); err != nil {
-		return nil, err
-	}
-
-	store := &Store{
-		filePath: filepath.Join(configDir, "connections.json"),
-	}
-
-	if err := store.load(); err != nil {
-		// Start with empty connections if file doesn't exist
-		store.Connections = []models.Connection{}
-	}
-
 	return store, nil
 }
 
-// load reads connections from the JSON file
-func (s *Store) load() error {
+// SetDB updates the database instance for the store
+func (s *Store) SetDB(db *sql.DB) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-
-	data, err := os.ReadFile(s.filePath)
-	if err != nil {
-		return err
-	}
-
-	return json.Unmarshal(data, &s.Connections)
+	s.db = db
+	return s.initAndMigrateLocked()
 }
 
-// save writes connections to the JSON file
-func (s *Store) save() error {
-	data, err := json.MarshalIndent(s.Connections, "", "  ")
-	if err != nil {
-		return err
+func (s *Store) initAndMigrate() error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.initAndMigrateLocked()
+}
+
+func (s *Store) initAndMigrateLocked() error {
+	if s.db == nil {
+		return fmt.Errorf("store db is nil")
 	}
 
-	return os.WriteFile(s.filePath, data, 0644)
+	tableStmt := `CREATE TABLE IF NOT EXISTS connections (
+		id TEXT PRIMARY KEY,
+		name TEXT NOT NULL,
+		host TEXT NOT NULL,
+		port INTEGER NOT NULL,
+		database TEXT NOT NULL,
+		username TEXT NOT NULL,
+		password TEXT NOT NULL,
+		ssl_mode TEXT DEFAULT 'disable',
+		color TEXT DEFAULT '#00C9A7',
+		created_at DATETIME NOT NULL
+	);`
+
+	if _, err := s.db.Exec(tableStmt); err != nil {
+		return fmt.Errorf("failed to create connections table: %w", err)
+	}
+
+	// Check if table is empty to attempt legacy JSON import
+	var count int
+	_ = s.db.QueryRow(`SELECT COUNT(*) FROM connections`).Scan(&count)
+	if count == 0 {
+		s.importLegacyJSON()
+	}
+
+	return nil
+}
+
+func (s *Store) importLegacyJSON() {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return
+	}
+
+	legacyPath := filepath.Join(homeDir, ".yxpg", "connections.json")
+	data, err := os.ReadFile(legacyPath)
+	if err != nil {
+		return
+	}
+
+	var conns []models.Connection
+	if err := json.Unmarshal(data, &conns); err != nil {
+		return
+	}
+
+	for _, conn := range conns {
+		if conn.ID == "" {
+			conn.ID = uuid.New().String()
+		}
+		if conn.CreatedAt.IsZero() {
+			conn.CreatedAt = time.Now()
+		}
+		if conn.SSLMode == "" {
+			conn.SSLMode = "disable"
+		}
+		_, _ = s.db.Exec(
+			`INSERT OR IGNORE INTO connections (id, name, host, port, database, username, password, ssl_mode, color, created_at)
+			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			conn.ID, conn.Name, conn.Host, conn.Port, conn.Database, conn.Username, conn.Password, conn.SSLMode, conn.Color, conn.CreatedAt,
+		)
+	}
 }
 
 // List returns all saved connections
 func (s *Store) List() []models.Connection {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	return s.Connections
+
+	var result []models.Connection
+	if s.db == nil {
+		return result
+	}
+
+	rows, err := s.db.Query(`SELECT id, name, host, port, database, username, password, ssl_mode, color, created_at FROM connections ORDER BY name`)
+	if err != nil {
+		return result
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var c models.Connection
+		if err := rows.Scan(&c.ID, &c.Name, &c.Host, &c.Port, &c.Database, &c.Username, &c.Password, &c.SSLMode, &c.Color, &c.CreatedAt); err == nil {
+			result = append(result, c)
+		}
+	}
+
+	if result == nil {
+		result = []models.Connection{}
+	}
+	return result
 }
 
-// Get returns a connection by ID (returns a copy to avoid race conditions)
+// Get returns a connection by ID
 func (s *Store) Get(id string) (*models.Connection, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	for i := range s.Connections {
-		if s.Connections[i].ID == id {
-			connCopy := s.Connections[i]
-			return &connCopy, nil
-		}
+	if s.db == nil {
+		return nil, ErrConnectionNotFound
 	}
 
-	return nil, ErrConnectionNotFound
+	var c models.Connection
+	err := s.db.QueryRow(
+		`SELECT id, name, host, port, database, username, password, ssl_mode, color, created_at FROM connections WHERE id = ?`,
+		id,
+	).Scan(&c.ID, &c.Name, &c.Host, &c.Port, &c.Database, &c.Username, &c.Password, &c.SSLMode, &c.Color, &c.CreatedAt)
+
+	if err == sql.ErrNoRows {
+		return nil, ErrConnectionNotFound
+	} else if err != nil {
+		return nil, err
+	}
+
+	return &c, nil
 }
 
 // Add saves a new connection
@@ -93,8 +169,13 @@ func (s *Store) Add(conn models.Connection) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
+	if s.db == nil {
+		return fmt.Errorf("store database connection is closed")
+	}
+
 	// Check for duplicates
-	for _, c := range s.Connections {
+	conns := s.listLocked()
+	for _, c := range conns {
 		if c.Name == conn.Name {
 			return fmt.Errorf("connection name '%s' already exists", conn.Name)
 		}
@@ -106,9 +187,20 @@ func (s *Store) Add(conn models.Connection) error {
 	if conn.ID == "" {
 		conn.ID = uuid.New().String()
 	}
+	if conn.CreatedAt.IsZero() {
+		conn.CreatedAt = time.Now()
+	}
+	if conn.SSLMode == "" {
+		conn.SSLMode = "disable"
+	}
 
-	s.Connections = append(s.Connections, conn)
-	return s.save()
+	_, err := s.db.Exec(
+		`INSERT INTO connections (id, name, host, port, database, username, password, ssl_mode, color, created_at)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		conn.ID, conn.Name, conn.Host, conn.Port, conn.Database, conn.Username, conn.Password, conn.SSLMode, conn.Color, conn.CreatedAt,
+	)
+
+	return err
 }
 
 // Update modifies an existing connection
@@ -116,8 +208,13 @@ func (s *Store) Update(conn models.Connection) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	// Check for duplicates (excluding itself)
-	for _, c := range s.Connections {
+	if s.db == nil {
+		return fmt.Errorf("store database connection is closed")
+	}
+
+	// Check duplicates excluding itself
+	conns := s.listLocked()
+	for _, c := range conns {
 		if c.ID == conn.ID {
 			continue
 		}
@@ -129,14 +226,20 @@ func (s *Store) Update(conn models.Connection) error {
 		}
 	}
 
-	for i := range s.Connections {
-		if s.Connections[i].ID == conn.ID {
-			s.Connections[i] = conn
-			return s.save()
-		}
+	res, err := s.db.Exec(
+		`UPDATE connections SET name = ?, host = ?, port = ?, database = ?, username = ?, password = ?, ssl_mode = ?, color = ? WHERE id = ?`,
+		conn.Name, conn.Host, conn.Port, conn.Database, conn.Username, conn.Password, conn.SSLMode, conn.Color, conn.ID,
+	)
+	if err != nil {
+		return err
 	}
 
-	return ErrConnectionNotFound
+	rows, _ := res.RowsAffected()
+	if rows == 0 {
+		return ErrConnectionNotFound
+	}
+
+	return nil
 }
 
 // Delete removes a connection by ID
@@ -144,12 +247,40 @@ func (s *Store) Delete(id string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	for i := range s.Connections {
-		if s.Connections[i].ID == id {
-			s.Connections = append(s.Connections[:i], s.Connections[i+1:]...)
-			return s.save()
-		}
+	if s.db == nil {
+		return fmt.Errorf("store database connection is closed")
 	}
 
-	return ErrConnectionNotFound
+	res, err := s.db.Exec(`DELETE FROM connections WHERE id = ?`, id)
+	if err != nil {
+		return err
+	}
+
+	rows, _ := res.RowsAffected()
+	if rows == 0 {
+		return ErrConnectionNotFound
+	}
+
+	return nil
+}
+
+func (s *Store) listLocked() []models.Connection {
+	var result []models.Connection
+	if s.db == nil {
+		return result
+	}
+
+	rows, err := s.db.Query(`SELECT id, name, host, port, database, username, password, ssl_mode, color, created_at FROM connections`)
+	if err != nil {
+		return result
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var c models.Connection
+		if err := rows.Scan(&c.ID, &c.Name, &c.Host, &c.Port, &c.Database, &c.Username, &c.Password, &c.SSLMode, &c.Color, &c.CreatedAt); err == nil {
+			result = append(result, c)
+		}
+	}
+	return result
 }

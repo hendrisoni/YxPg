@@ -21,19 +21,14 @@ type Manager struct {
 	cancelFuncs map[string]context.CancelFunc
 }
 
-// NewManager creates a new connection manager
-func NewManager() (*Manager, error) {
-	store, err := NewStore()
-	if err != nil {
-		return nil, fmt.Errorf("failed to create store: %w", err)
-	}
-
+// NewManager creates a new connection manager with the given store
+func NewManager(store *Store) *Manager {
 	return &Manager{
 		pools:       make(map[string]*pgxpool.Pool),
 		configs:     make(map[string]*pgxpool.Config),
 		store:       store,
 		cancelFuncs: make(map[string]context.CancelFunc),
-	}, nil
+	}
 }
 
 // buildDSN constructs a PostgreSQL connection string

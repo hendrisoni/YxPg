@@ -36,5 +36,8 @@ go.work.sum
 .DS_Store
 Thumbs.db
 
-# Application Configuration
+# Application Configuration & Database
 yxpg.conf
+yxpg.sys
+*.sys
+

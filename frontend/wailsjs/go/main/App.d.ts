@@ -56,6 +56,8 @@ export function GetDatabaseName(arg1:string):Promise<string>;
 
 export function GetDatabases(arg1:string):Promise<Array<string>>;
 
+export function GetDbPath():Promise<string>;
+
 export function GetDefaultConnectionConfig():Promise<main.DefaultConnectionConfig>;
 
 export function GetForeignKeys(arg1:string,arg2:string,arg3:string):Promise<Array<models.FKInfo>>;
@@ -102,6 +104,8 @@ export function LoadWorkspace():Promise<string>;
 
 export function OpenFolder(arg1:string):Promise<void>;
 
+export function RefreshDb():Promise<void>;
+
 export function RefreshSchema(arg1:string):Promise<void>;
 
 export function RenameTable(arg1:string,arg2:string,arg3:string,arg4:string):Promise<void>;
@@ -111,6 +115,10 @@ export function SavePgBinPath(arg1:string):Promise<void>;
 export function SaveQuery(arg1:string,arg2:string):Promise<void>;
 
 export function SaveWorkspace(arg1:string):Promise<void>;
+
+export function SelectDbFile():Promise<string>;
+
+export function SetDbPath(arg1:string):Promise<void>;
 
 export function StartBackup(arg1:dbexport.BackupOptions):Promise<void>;
 
