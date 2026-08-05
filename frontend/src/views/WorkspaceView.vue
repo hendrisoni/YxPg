@@ -82,6 +82,10 @@
               :tab="tabsStore.activeTab"
               :key="'table-index-size-' + tabsStore.activeTab.id"
             />
+            <PerformanceAnalyzerView
+              v-else-if="tabsStore.activeTab.type === 'performance-analyzer'"
+              :key="'performance-analyzer-' + tabsStore.activeTab.id"
+            />
           </KeepAlive>
         </div>
       </div>
@@ -165,6 +169,7 @@ import MaintenanceView from './MaintenanceView.vue'
 import ReferentialView from './ReferentialView.vue'
 import FunctionsTriggersView from './FunctionsTriggersView.vue'
 import TableIndexSizeView from './TableIndexSizeView.vue'
+import PerformanceAnalyzerView from './PerformanceAnalyzerView.vue'
 import { useWorkspaceStore } from '../stores/workspace'
 
 const connectionsStore = useConnectionsStore()

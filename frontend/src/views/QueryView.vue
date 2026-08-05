@@ -45,6 +45,15 @@
           Date
         </button>
 
+        <button @click.stop="runExplainAnalyze" :disabled="!isTargetConnected || isExecuting"
+          class="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] bg-teal-accent/15 border border-teal-accent/40 text-teal-accent rounded hover:bg-teal-accent/25 transition-all font-medium disabled:opacity-50 cursor-pointer"
+          title="Run EXPLAIN ANALYZE & Compare Performance">
+          <svg class="w-3.5 h-3.5 text-teal-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+          </svg>
+          Explain Analyze
+        </button>
+
         <button @click="openQueryLogTab"
           class="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] bg-navy-secondary border border-navy-border text-text-primary rounded hover:bg-navy-hover transition-colors"
           title="Lihat 7 query terakhir">
@@ -173,7 +182,7 @@
                 :result="res"
                 :executed-sql="res.raw_sql || lastExecutedSql"
                 :query-sql="res.total_count > 0 ? (res.raw_sql || lastExecutedSql) : undefined"
-                :query-connection-id="tab.connectionId || connectionsStore.currentConnectionId"
+                :query-connection-id="tab.connectionId || connectionsStore.currentConnectionId || undefined"
                 @refresh="runQuery"
               />
             </div>
@@ -205,9 +214,11 @@ import { useSchemaStore } from '../stores/schema'
 import { useTabsStore } from '../stores/tabs'
 import { useUiStore } from '../stores/ui'
 import { useWorkspaceStore } from '../stores/workspace'
+import { usePerformanceStore } from '../stores/performance'
 import { formatSQL } from '../utils/sql-formatter'
 import type { Tab, QueryResult } from '../types'
 import ResultGrid from '../components/query/ResultGrid.vue'
+import * as App from '../../wailsjs/go/main/App'
 
 const props = defineProps<{
   tab: Tab
@@ -218,6 +229,79 @@ const tabsStore = useTabsStore()
 const uiStore = useUiStore()
 const workspaceStore = useWorkspaceStore()
 const schemaStore = useSchemaStore()
+const performanceStore = usePerformanceStore()
+
+async function runExplainAnalyze() {
+  const connId = props.tab.connectionId || connectionsStore.currentConnectionId
+  if (!connId) {
+    uiStore.addNotification({
+      type: 'warning',
+      title: 'No Connection',
+      message: 'Please connect to a database before running EXPLAIN ANALYZE'
+    })
+    return
+  }
+
+  const conn = connectionsStore.connections.find(c => c.id === connId)
+  const dbName = conn?.database || 'default'
+
+  let sqlToRun = props.tab.sql || ''
+  if (editor) {
+    const sel = editor.state.sliceDoc(editor.state.selection.main.from, editor.state.selection.main.to)
+    if (sel && sel.trim()) {
+      sqlToRun = sel
+    } else {
+      sqlToRun = editor.state.doc.toString()
+    }
+  }
+
+  if (!sqlToRun || !sqlToRun.trim()) {
+    uiStore.addNotification({
+      type: 'warning',
+      title: 'Empty Query',
+      message: 'Please enter a SQL query to analyze'
+    })
+    return
+  }
+
+  isExecuting.value = true
+  try {
+    const explainRes = await App.ExplainQuery(connId, sqlToRun)
+    if (!explainRes || !explainRes.raw_text || explainRes.raw_text.startsWith('Error')) {
+      uiStore.addNotification({
+        type: 'error',
+        title: 'EXPLAIN Failed',
+        message: explainRes?.raw_text || 'Failed to run EXPLAIN ANALYZE'
+      })
+      return
+    }
+
+    // Save record to performance store
+    performanceStore.recordExplainResult(connId, dbName, 'public', sqlToRun, explainRes.raw_text)
+
+    // Open or switch to Performance Analyzer Tab
+    const existingTab = tabsStore.tabs.find(t => t.type === 'performance-analyzer')
+    if (existingTab) {
+      tabsStore.setActiveTab(existingTab.id)
+    } else {
+      tabsStore.createTab('performance-analyzer', { title: 'Performance Analyzer' })
+    }
+
+    uiStore.addNotification({
+      type: 'success',
+      title: 'Performance Recorded',
+      message: 'EXPLAIN ANALYZE completed & recorded in Performance Analyzer'
+    })
+  } catch (err: any) {
+    uiStore.addNotification({
+      type: 'error',
+      title: 'EXPLAIN Error',
+      message: err.message || String(err)
+    })
+  } finally {
+    isExecuting.value = false
+  }
+}
 
 const editorContainer = ref<HTMLElement | null>(null)
 const isExecuting = ref(false)

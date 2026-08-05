@@ -257,7 +257,7 @@ export interface IndexSizeInfo {
 export interface Tab {
   id: string
   title: string
-  type: 'query' | 'table' | 'builder' | 'ddl' | 'home' | 'log' | 'backup' | 'referential' | 'functions-triggers' | 'maintenance' | 'table-index-size'
+  type: 'query' | 'table' | 'builder' | 'ddl' | 'home' | 'log' | 'backup' | 'referential' | 'functions-triggers' | 'maintenance' | 'table-index-size' | 'performance-analyzer'
   connectionId?: string
   schema?: string
   table?: string
@@ -288,3 +288,83 @@ export interface Notification {
     callback: () => void
   }
 }
+
+// Performance Analyzer Types
+export type PerformanceBadgeType = 'Excellent' | 'Good' | 'Average' | 'Needs Optimization' | 'Critical'
+
+export interface ParsedExplainNode {
+  id: string
+  node_type: string
+  relation_name?: string
+  alias?: string
+  index_name?: string
+  scan_direction?: string
+  join_type?: string
+  startup_cost: number
+  total_cost: number
+  plan_rows: number
+  plan_width: number
+  actual_time?: number
+  actual_rows?: number
+  actual_loops?: number
+  shared_hit_blocks?: number
+  shared_read_blocks?: number
+  shared_written_blocks?: number
+  temp_read_blocks?: number
+  temp_written_blocks?: number
+  filter?: string
+  index_cond?: string
+  recheck_cond?: string
+  rows_removed_by_filter?: number
+  heap_fetches?: number
+  workers_planned?: number
+  workers_launched?: number
+  plans?: ParsedExplainNode[]
+  diff_status?: 'added' | 'removed' | 'changed' | 'same'
+  prev_node_type?: string
+}
+
+export interface PerformanceRecord {
+  id: string
+  connection_id: string
+  database: string
+  schema: string
+  query_hash: string
+  query_name: string
+  remark?: string
+  sql: string
+  sql_length: number
+  executed_at: string
+  execution_time: number // ms
+  planning_time: number // ms
+  total_time: number // ms
+  total_cost: number
+  startup_cost: number
+  plan_rows: number
+  actual_rows: number
+  shared_hit: number
+  shared_read: number
+  temp_read: number
+  temp_written: number
+  scan_types: string[]
+  join_types: string[]
+  top_node_type: string
+  plan_tree?: ParsedExplainNode
+  raw_explain_json: string
+}
+
+export interface MetricComparison {
+  name: string
+  unit: string
+  previous: number
+  current: number
+  diff: number
+  percentage: number
+  status: 'better' | 'worse' | 'same'
+}
+
+export interface QuickInsightItem {
+  type: 'positive' | 'warning' | 'neutral'
+  text: string
+}
+

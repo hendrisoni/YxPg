@@ -62,6 +62,9 @@
         <svg v-else-if="tab.type === 'functions-triggers'" class="w-3.5 h-3.5 flex-shrink-0 text-purple-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
         </svg>
+        <svg v-else-if="tab.type === 'performance-analyzer'" class="w-3.5 h-3.5 flex-shrink-0 text-teal-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+        </svg>
 
         <!-- Modified indicator -->
         <span v-if="tab.modified" class="w-1.5 h-1.5 rounded-full bg-accent-amber flex-shrink-0"></span>

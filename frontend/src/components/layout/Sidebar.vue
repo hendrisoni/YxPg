@@ -96,6 +96,15 @@
           </svg>
         </button>
 
+        <!-- Performance Analyzer Button -->
+        <button @click="handlePerformanceAnalyzerClick"
+          class="p-2 rounded-lg text-text-secondary hover:text-teal-accent hover:bg-navy-hover transition-colors cursor-pointer"
+          title="Performance Analyzer (EXPLAIN ANALYZE Comparison)">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+          </svg>
+        </button>
+
 
         <!-- Settings Button -->
         <button @click="$emit('openSettings')"
@@ -239,6 +248,10 @@ const connectionsStore = useConnectionsStore()
 const workspaceStore = useWorkspaceStore()
 const tabsStore = useTabsStore()
 const uiStore = useUiStore()
+
+function handlePerformanceAnalyzerClick() {
+  tabsStore.createTab('performance-analyzer', { title: 'Performance Analyzer' })
+}
 
 const searchQuery = ref('')
 const isAllExpanded = ref(false)
